@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        REFLEX — Hospital Emergency Console
+    </title>
+
+
+    <!-- =====================================================
+         FONTS
+         ===================================================== -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <style>
+
+        /* =====================================================
+           GLOBAL
+           ===================================================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            background: #070c12;
+
+            color: #e7edf5;
+
+            font-family:
+                "Inter",
+                sans-serif;
+
+        }
+
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
+        #console-header {
+
+            height: 90px;
+
+            display: flex;
+
+            align-items: center;
+
+            padding: 0 30px;
+
+            gap: 30px;
+
+            background: #0d141e;
+
+            border-bottom:
+                1px solid #1d2a38;
+
+        }
+
+
+        #brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 14px;
+
+            min-width: 300px;
+
+        }
+
+
+        #brand-mark {
+
+            font-size: 34px;
+
+        }
+
+
+        #brand h1 {
+
+            margin: 0;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 24px;
+
+            letter-spacing: 3px;
+
+        }
+
+
+        #tagline {
+
+            margin-top: 3px;
+
+            color: #71849a;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 12px;
+
+        }
+
+
+        #pulse-line {
+
+            flex: 1;
+
+            max-width: 550px;
+
+            height: 40px;
+
+        }
+
+
+        #pulse-path {
+
+            fill: none;
+
+            stroke: #38a8ff;
+
+            stroke-width: 2;
+
+        }
+
+
+        #connection-status {
+
+            padding:
+                9px 16px;
+
+            border:
+                1px solid #263646;
+
+            border-radius: 30px;
+
+            color: #fbbf24;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+
+        }
+
+
+        #connection-status.connected {
+
+            color: #22c55e;
+
+            border-color: #22c55e;
+
+        }
+
+
+        #connection-status.disconnected {
+
+            color: #ff4d4d;
+
+            border-color: #ff4d4d;
+
+        }
+
+
+        /* =====================================================
+           MAIN
+           ===================================================== */
+
+        #hospital-main {
+
+            padding: 25px;
+
+            max-width: 1500px;
+
+            margin: auto;
+
+        }
+
+
+        /* =====================================================
+           TOP STATUS
+           ===================================================== */
+
+        #hospital-status-bar {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            align-items: center;
+
+            padding: 18px 20px;
+
+            margin-bottom: 20px;
+
+            background: #0d141e;
+
+            border:
+                1px solid #1d2a38;
+
+            border-radius: 10px;
+
+        }
+
+
+        #hospital-name {
+
+            font-size: 20px;
+
+            font-weight: 800;
+
+        }
+
+
+        #hospital-online {
+
+            color: #22c55e;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =====================================================
+           NO INCIDENT
+           ===================================================== */
+
+        #waiting-screen {
+
+            padding: 70px 20px;
+
+            text-align: center;
+
+            background: #0d141e;
+
+            border:
+                1px dashed #263646;
+
+            border-radius: 12px;
+
+            color: #667b91;
+
+        }
+
+
+        #waiting-icon {
+
+            font-size: 55px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        #waiting-title {
+
+            color: #a9b7c7;
+
+            font-size: 20px;
+
+            font-weight: 700;
+
+        }
+
+
+        #waiting-text {
+
+            margin-top: 8px;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =====================================================
+           ALERT
+           ===================================================== */
+
+        #emergency-alert {
+
+            display: none;
+
+            margin-bottom: 20px;
+
+            padding: 20px;
+
+            background: #291014;
+
+            border:
+                1px solid #ff4d4d;
+
+            border-left:
+                5px solid #ff4d4d;
+
+            border-radius: 10px;
+
+        }
+
+
+        #emergency-alert.show {
+
+            display: block;
+
+        }
+
+
+        #alert-title {
+
+            color: #ff5b63;
+
+            font-size: 22px;
+
+            font-weight: 800;
+
+        }
+
+
+        #alert-message {
+
+            margin-top: 7px;
+
+            color: #c5ced9;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =====================================================
+           CASE HEADER
+           ===================================================== */
+
+        #case-header {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            align-items: center;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        #case-title {
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 13px;
+
+            letter-spacing: 2px;
+
+            color: #71849a;
+
+            text-transform:
+                uppercase;
+
+        }
+
+
+        #severity-badge {
+
+            padding:
+                8px 15px;
+
+            border-radius: 6px;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-weight: 600;
+
+            font-size: 12px;
+
+        }
+
+
+        #severity-badge.LOW {
+
+            color: #22c55e;
+
+            background: #10281a;
+
+        }
+
+
+        #severity-badge.MEDIUM {
+
+            color: #fbbf24;
+
+            background: #33280b;
+
+        }
+
+
+        #severity-badge.CRITICAL {
+
+            color: #ff4d4d;
+
+            background: #351012;
+
+        }
+
+
+        /* =====================================================
+           STAT CARDS
+           ===================================================== */
+
+        #stats {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 15px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .stat-card {
+
+            padding: 20px;
+
+            background: #0d141e;
+
+            border:
+                1px solid #1d2a38;
+
+            border-radius: 10px;
+
+        }
+
+
+        .stat-label {
+
+            color: #71849a;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 10px;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        .stat-value {
+
+            font-size: 21px;
+
+            font-weight: 800;
+
+        }
+
+
+        /* =====================================================
+           MAIN GRID
+           ===================================================== */
+
+        #case-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 15px;
+
+        }
+
+
+        .panel {
+
+            background: #0d141e;
+
+            border:
+                1px solid #1d2a38;
+
+            border-radius: 10px;
+
+            padding: 20px;
+
+        }
+
+
+        .panel-title {
+
+            color: #71849a;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 11px;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        /* =====================================================
+           LOCATION
+           ===================================================== */
+
+        #location-value {
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 16px;
+
+            color: #38a8ff;
+
+        }
+
+
+        /* =====================================================
+           AMBULANCE
+           ===================================================== */
+
+        #ambulance-name {
+
+            font-size: 20px;
+
+            font-weight: 800;
+
+        }
+
+
+        .detail {
+
+            color: #91a2b5;
+
+            font-size: 13px;
+
+            margin-top: 7px;
+
+        }
+
+
+        .green {
+
+            color: #22c55e;
+
+        }
+
+
+        .yellow {
+
+            color: #fbbf24;
+
+        }
+
+
+        .red {
+
+            color: #ff4d4d;
+
+        }
+
+
+        /* =====================================================
+           HOSPITAL CAPACITY
+           ===================================================== */
+
+        #capacity-number {
+
+            font-size: 38px;
+
+            font-weight: 800;
+
+            color: #22c55e;
+
+        }
+
+
+        #capacity-label {
+
+            color: #71849a;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 11px;
+
+        }
+
+
+        /* =====================================================
+           ACTION BUTTONS
+           ===================================================== */
+
+        #actions {
+
+            display: flex;
+
+            gap: 12px;
+
+            margin-top: 20px;
+
+        }
+
+
+        .action-button {
+
+            flex: 1;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 7px;
+
+            color: white;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        #acknowledge-btn {
+
+            background: #2563eb;
+
+        }
+
+
+        #prepare-btn {
+
+            background: #16a34a;
+
+        }
+
+
+        .action-button:hover {
+
+            opacity: 0.85;
+
+        }
+
+
+        /* =====================================================
+           INCIDENT HISTORY
+           ===================================================== */
+
+        #hospital-cases {
+
+            margin-top: 25px;
+
+        }
+
+
+        .history-card {
+
+            padding: 15px;
+
+            margin-bottom: 10px;
+
+            background: #0d141e;
+
+            border:
+                1px solid #1d2a38;
+
+            border-radius: 8px;
+
+        }
+
+
+        .history-top {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+        }
+
+
+        .history-time {
+
+            color: #71849a;
+
+            font-family:
+                "IBM Plex Mono",
+                monospace;
+
+            font-size: 11px;
+
+        }
+
+
+        .history-detail {
+
+            color: #9aaabd;
+
+            font-size: 12px;
+
+            margin-top: 7px;
+
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+           ===================================================== */
+
+        @media (max-width: 900px) {
+
+            #stats {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+
+            #case-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            #console-header {
+
+                padding: 0 15px;
+
+            }
+
+
+            #pulse-line {
+
+                display: none;
+
+            }
+
+
+            #hospital-main {
+
+                padding: 12px;
+
+            }
+
+
+            #stats {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            #actions {
+
+                flex-direction:
+                    column;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+
+<header id="console-header">
+
+
+    <div id="brand">
+
+        <span id="brand-mark">
+            ⚡
+        </span>
+
+
+        <div>
+
+            <h1>
+                REFLEX
+            </h1>
+
+
+            <div id="tagline">
+                Hospital Emergency Console
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <svg
+        id="pulse-line"
+        viewBox="0 0 300 40"
+        preserveAspectRatio="none"
+    >
+
+        <path
+            id="pulse-path"
+            d="M0,20 L300,20"
+        />
+
+    </svg>
+
+
+    <div id="connection-status">
+        Connecting...
+    </div>
+
+
+</header>
+
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+
+<main id="hospital-main">
+
+
+    <!-- =====================================================
+         HOSPITAL STATUS
+         ===================================================== -->
+
+    <div id="hospital-status-bar">
+
+
+        <div id="hospital-name">
+            🏥 Emergency Hospital A
+        </div>
+
+
+        <div id="hospital-online">
+            ● SYSTEM ONLINE
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         EMERGENCY ALERT
+         ===================================================== -->
+
+    <div id="emergency-alert">
+
+
+        <div id="alert-title">
+            🚨 NEW PATIENT INCOMING
+        </div>
+
+
+        <div id="alert-message">
+            Emergency incident detected.
+            Prepare the emergency team.
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         WAITING SCREEN
+         ===================================================== -->
+
+    <div id="waiting-screen">
+
+
+        <div id="waiting-icon">
+            🏥
+        </div>
+
+
+        <div id="waiting-title">
+            Waiting for incoming emergency
+        </div>
+
+
+        <div id="waiting-text">
+            REFLEX will automatically alert
+            this hospital when an accident is detected.
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         ACTIVE CASE
+         ===================================================== -->
+
+    <div
+        id="active-case"
+        style="display:none;"
+    >
+
+
+        <div id="case-header">
+
+
+            <div id="case-title">
+                Active Emergency Case
+            </div>
+
+
+            <div
+                id="severity-badge"
+                class="MEDIUM"
+            >
+                MEDIUM
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             STATS
+             ================================================= -->
+
+        <div id="stats">
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-label">
+                    INCIDENT STATUS
+                </div>
+
+
+                <div
+                    class="stat-value green"
+                    id="incident-status"
+                >
+                    INCOMING
+                </div>
+
+
+            </div>
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-label">
+                    AI CONFIDENCE
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="confidence"
+                >
+                    —
+                </div>
+
+
+            </div>
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-label">
+                    VEHICLES INVOLVED
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="vehicles"
+                >
+                    —
+                </div>
+
+
+            </div>
+
+
+            <div class="stat-card">
+
+
+                <div class="stat-label">
+                    SEVERITY SCORE
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="severity-score"
+                >
+                    —
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             CASE DETAILS
+             ================================================= -->
+
+        <div id="case-grid">
+
+
+            <!-- LOCATION -->
+
+            <div class="panel">
+
+
+                <div class="panel-title">
+                    📍 ACCIDENT LOCATION
+                </div>
+
+
+                <div id="location-value">
+                    —
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="event-time"
+                >
+                    Event time: —
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="reason"
+                >
+                    Reason: —
+                </div>
+
+
+            </div>
+
+
+            <!-- AMBULANCE -->
+
+            <div class="panel">
+
+
+                <div class="panel-title">
+                    🚑 AMBULANCE
+                </div>
+
+
+                <div id="ambulance-name">
+                    —
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="ambulance-status"
+                >
+                    Status: —
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="ambulance-distance"
+                >
+                    Distance: —
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="ambulance-eta"
+                >
+                    ETA: —
+                </div>
+
+
+            </div>
+
+
+            <!-- HOSPITAL -->
+
+            <div class="panel">
+
+
+                <div class="panel-title">
+                    🏥 HOSPITAL CAPACITY
+                </div>
+
+
+                <div id="capacity-number">
+                    —
+                </div>
+
+
+                <div id="capacity-label">
+                    Emergency capacity available
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="hospital-status"
+                >
+                    Status: READY
+                </div>
+
+
+            </div>
+
+
+            <!-- RESPONSE -->
+
+            <div class="panel">
+
+
+                <div class="panel-title">
+                    ⚡ RESPONSE CONTROL
+                </div>
+
+
+                <div
+                    class="detail"
+                    id="response-status"
+                >
+                    Awaiting hospital acknowledgement.
+                </div>
+
+
+                <div id="actions">
+
+
+                    <button
+                        class="action-button"
+                        id="acknowledge-btn"
+                    >
+                        ✓ ACKNOWLEDGE
+                    </button>
+
+
+                    <button
+                        class="action-button"
+                        id="prepare-btn"
+                    >
+                        🏥 PREPARE TEAM
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         HISTORY
+         ===================================================== -->
+
+    <section id="hospital-feed">
+
+
+        <div
+            class="panel-title"
+            style="margin-top:30px;"
+        >
+            INCIDENT HISTORY
+        </div>
+
+
+        <div id="hospital-cases">
+
+
+            <div class="empty-state">
+                No previous incidents.
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+<!-- =========================================================
+     SOCKET.IO
+     ========================================================= -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"
+></script>
+
+
+<script
+    src="{{ url_for('static', filename='js/hospital.js') }}"
+></script>
+
+
+</body>
+
+</html>

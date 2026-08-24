@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reflex — AI Emergency Response Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="landing">
+  <div class="landing-wrap">
+    <span id="brand-mark">⚡</span>
+    <h1>REFLEX</h1>
+    <p id="tagline">Faster than the first call.</p>
+    <p class="landing-desc">
+      AI-powered accident detection, severity scoring, and automatic
+      hospital dispatch — cutting the delay between impact and response.
+    </p>
+    <div class="landing-links">
+      <a href="{{ url_for('dashboard') }}" class="btn-primary">Open Response Console</a>
+      <a href="{{ url_for('hospital_view') }}" class="btn-secondary">Hospital View</a>
+    </div>
+  </div>
+</body>
+</html>
