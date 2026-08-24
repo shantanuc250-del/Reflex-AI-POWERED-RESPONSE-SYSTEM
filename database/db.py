@@ -49,6 +49,46 @@ def init_db():
         )
     """)
 
+    # ----------------------------------------------------------
+    # INCIDENTS — Evidence capture records
+    # One row per confirmed accident, keyed by incident_id
+    # ----------------------------------------------------------
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS incidents (
+            incident_id         TEXT PRIMARY KEY,
+            timestamp           TEXT NOT NULL,
+            clip                TEXT,
+            lat                 REAL,
+            lng                 REAL,
+            severity            TEXT,
+            score               INTEGER,
+            confidence          INTEGER,
+            reason              TEXT,
+            vehicles_involved   INTEGER,
+            event_frame         INTEGER,
+            event_time_sec      REAL,
+            ambulance_id        TEXT,
+            ambulance_name      TEXT,
+            ambulance_eta       INTEGER,
+            hospital_name       TEXT,
+            hospital_eta        INTEGER,
+            evidence_image_path TEXT,
+            status              TEXT DEFAULT 'DETECTED',
+            acknowledged_at     TEXT
+        )
+    """)
+
+    # Safe migrations for existing databases
+    try:
+        cur.execute("ALTER TABLE incidents ADD COLUMN status TEXT DEFAULT 'DETECTED'")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
+    try:
+        cur.execute("ALTER TABLE incidents ADD COLUMN acknowledged_at TEXT")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
     # Seed a couple of mock hospitals only if the table is empty
     cur.execute("SELECT COUNT(*) FROM hospitals")
     if cur.fetchone()[0] == 0:

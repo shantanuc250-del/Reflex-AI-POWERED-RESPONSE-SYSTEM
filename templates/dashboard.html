@@ -1,1219 +1,1329 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>
-        REFLEX — AI Emergency Response
-    </title>
-
-
-    <!-- =====================================================
-         LEAFLET
-         ===================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
-
-
-    <!-- =====================================================
-         GOOGLE FONTS
-         ===================================================== -->
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-
-    <style>
-
-        /* =====================================================
-           GLOBAL
-           ===================================================== */
-
-        * {
-            box-sizing: border-box;
-        }
-
-
-        body {
-
-            margin: 0;
-
-            background: #080d14;
-
-            color: #e7edf5;
-
-            font-family: "Inter", sans-serif;
-
-        }
-
-
-        /* =====================================================
-           HEADER
-           ===================================================== */
-
-        #console-header {
-
-            height: 90px;
-
-            display: flex;
-
-            align-items: center;
-
-            padding: 0 30px;
-
-            background: #0d141e;
-
-            border-bottom: 1px solid #1d2a38;
-
-            gap: 30px;
-
-        }
-
-
-        #brand {
-
-            display: flex;
-
-            align-items: center;
-
-            min-width: 290px;
-
-            gap: 15px;
-
-        }
-
-
-        #brand-mark {
-
-            font-size: 34px;
-
-        }
-
-
-        #brand h1 {
-
-            margin: 0;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 24px;
-
-            letter-spacing: 3px;
-
-        }
-
-
-        #tagline {
-
-            margin-top: 3px;
-
-            color: #6f8298;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 12px;
-
-        }
-
-
-        #pulse-line {
-
-            flex: 1;
-
-            max-width: 500px;
-
-            height: 40px;
-
-        }
-
-
-        #pulse-path {
-
-            fill: none;
-
-            stroke: #38a8ff;
-
-            stroke-width: 2;
-
-        }
-
-
-        #connection-status {
-
-            padding: 9px 16px;
-
-            border-radius: 30px;
-
-            border: 1px solid #263646;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 12px;
-
-            white-space: nowrap;
-
-        }
-
-
-        #connection-status.connected {
-
-            color: #22c55e;
-
-            border-color: #22c55e;
-
-        }
-
-
-        #connection-status.disconnected {
-
-            color: #ff4d4d;
-
-            border-color: #ff4d4d;
-
-        }
-
-
-        /* =====================================================
-           MAIN LAYOUT
-           ===================================================== */
-
-        #main {
-
-            display: grid;
-
-            grid-template-columns: 350px 1fr;
-
-            height: calc(100vh - 90px);
-
-            overflow: hidden;
-
-        }
-
-
-        /* =====================================================
-           SIDEBAR
-           ===================================================== */
-
-        #sidebar {
-
-            background: #0b121b;
-
-            border-right: 1px solid #1d2a38;
-
-            padding: 20px;
-
-            overflow-y: auto;
-
-        }
-
-
-        .section-title {
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 12px;
-
-            letter-spacing: 2px;
-
-            color: #71849a;
-
-            margin-bottom: 14px;
-
-            text-transform: uppercase;
-
-        }
-
-
-        /* =====================================================
-           INCIDENT FEED
-           ===================================================== */
-
-        #cases {
-
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 12px;
-
-        }
-
-
-        .empty-state {
-
-            color: #63778e;
-
-            border: 1px dashed #263646;
-
-            border-radius: 8px;
-
-            padding: 25px 15px;
-
-            text-align: center;
-
-            font-size: 13px;
-
-        }
-
-
-        .case-card {
-
-            background: #111a25;
-
-            border: 1px solid #263646;
-
-            border-left: 3px solid #38a8ff;
-
-            border-radius: 8px;
-
-            padding: 14px;
-
-        }
-
-
-        .case-card.MEDIUM {
-
-            border-left-color: #fbbf24;
-
-        }
-
-
-        .case-card.CRITICAL {
-
-            border-left-color: #ff4d4d;
-
-        }
-
-
-        .case-row {
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            margin-bottom: 10px;
-
-        }
-
-
-        .case-detail {
-
-            font-size: 12px;
-
-            color: #9aaabd;
-
-            margin-top: 7px;
-
-            line-height: 1.4;
-
-        }
-
-
-        .case-detail b {
-
-            color: #e7edf5;
-
-        }
-
-
-        .badge {
-
-            padding: 4px 8px;
-
-            border-radius: 5px;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 10px;
-
-            font-weight: 600;
-
-        }
-
-
-        .badge.MEDIUM {
-
-            background: #3b2d0b;
-
-            color: #fbbf24;
-
-        }
-
-
-        .badge.CRITICAL {
-
-            background: #3d1111;
-
-            color: #ff4d4d;
-
-        }
-
-
-        .badge.LOW {
-
-            background: #12351f;
-
-            color: #22c55e;
-
-        }
-
-
-        /* =====================================================
-           SIMULATION PANEL
-           ===================================================== */
-
-        #trigger-panel {
-
-            margin-top: 35px;
-
-        }
-
-
-        label {
-
-            display: block;
-
-            margin-bottom: 13px;
-
-            color: #7e91a6;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 11px;
-
-        }
-
-
-        input {
-
-            width: 100%;
-
-            margin-top: 7px;
-
-            padding: 12px;
-
-            background: #080d14;
-
-            color: #e7edf5;
-
-            border: 1px solid #263646;
-
-            border-radius: 6px;
-
-            outline: none;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-        }
-
-
-        input:focus {
-
-            border-color: #38a8ff;
-
-        }
-
-
-        #trigger-btn {
-
-            width: 100%;
-
-            padding: 14px;
-
-            margin-top: 5px;
-
-            border: none;
-
-            border-radius: 7px;
-
-            background: #ff4d55;
-
-            color: white;
-
-            font-size: 14px;
-
-            font-weight: 700;
-
-            cursor: pointer;
-
-        }
-
-
-        #trigger-btn:hover {
-
-            background: #ff6269;
-
-        }
-
-
-        #trigger-btn:disabled {
-
-            opacity: 0.7;
-
-            cursor: wait;
-
-        }
-
-
-        /* =====================================================
-           CONTENT
-           ===================================================== */
-
-        #content {
-
-            overflow-y: auto;
-
-            padding: 18px;
-
-            background: #070c12;
-
-        }
-
-
-        /* =====================================================
-           VIDEO
-           ===================================================== */
-
-        #video-panel {
-
-            background: #0d141e;
-
-            border: 1px solid #1d2a38;
-
-            border-radius: 10px;
-
-            overflow: hidden;
-
-        }
-
-
-        #video-header {
-
-            height: 45px;
-
-            padding: 0 15px;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            border-bottom: 1px solid #1d2a38;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 12px;
-
-        }
-
-
-        #video-status {
-
-            color: #22c55e;
-
-        }
-
-
-        #incident-video {
-
-            display: block;
-
-            width: 100%;
-
-            max-height: 480px;
-
-            background: black;
-
-        }
-
-
-        /* =====================================================
-           INCIDENT STATS
-           ===================================================== */
-
-        #stats {
-
-            display: grid;
-
-            grid-template-columns:
-                repeat(4, 1fr);
-
-            gap: 12px;
-
-            margin-top: 12px;
-
-        }
-
-
-        .stat {
-
-            background: #0d141e;
-
-            border: 1px solid #1d2a38;
-
-            border-radius: 8px;
-
-            padding: 15px;
-
-        }
-
-
-        .stat-label {
-
-            color: #6f8298;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 10px;
-
-            margin-bottom: 7px;
-
-        }
-
-
-        .stat-value {
-
-            font-size: 20px;
-
-            font-weight: 800;
-
-        }
-
-
-        #severity-value {
-
-            color: #fbbf24;
-
-        }
-
-
-        #confidence-value {
-
-            color: #38a8ff;
-
-        }
-
-
-        /* =====================================================
-           DISPATCH
-           ===================================================== */
-
-        #dispatch {
-
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 12px;
-
-            margin-top: 12px;
-
-        }
-
-
-        .dispatch-card {
-
-            background: #0d141e;
-
-            border: 1px solid #1d2a38;
-
-            border-radius: 8px;
-
-            padding: 17px;
-
-        }
-
-
-        .dispatch-title {
-
-            color: #6f8298;
-
-            font-family:
-                "IBM Plex Mono",
-                monospace;
-
-            font-size: 11px;
-
-            margin-bottom: 8px;
-
-        }
-
-
-        .dispatch-name {
-
-            font-size: 18px;
-
-            font-weight: 700;
-
-            margin-bottom: 10px;
-
-        }
-
-
-        .dispatch-detail {
-
-            color: #91a2b5;
-
-            font-size: 13px;
-
-            margin-top: 5px;
-
-        }
-
-
-        .dispatch-ready {
-
-            color: #22c55e;
-
-        }
-
-
-        /* =====================================================
-           MAP
-           ===================================================== */
-
-        #map-wrapper {
-
-            margin-top: 12px;
-
-            border: 1px solid #1d2a38;
-
-            border-radius: 8px;
-
-            overflow: hidden;
-
-        }
-
-
-        #map {
-
-            height: 430px;
-
-            width: 100%;
-
-        }
-
-
-        /* =====================================================
-           RESPONSIVE
-           ===================================================== */
-
-        @media (max-width: 1000px) {
-
-            #main {
-
-                grid-template-columns: 280px 1fr;
-
-            }
-
-
-            #stats {
-
-                grid-template-columns:
-                    repeat(2, 1fr);
-
-            }
-
-        }
-
-
-        @media (max-width: 750px) {
-
-            #main {
-
-                display: block;
-
-                height: auto;
-
-            }
-
-
-            #sidebar {
-
-                border-right: none;
-
-                border-bottom: 1px solid #1d2a38;
-
-            }
-
-
-            #console-header {
-
-                padding: 0 15px;
-
-            }
-
-
-            #pulse-line {
-
-                display: none;
-
-            }
-
-
-            #dispatch {
-
-                grid-template-columns: 1fr;
-
-            }
-
-        }
-
-    </style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REFLEX — AI Emergency Response Console</title>
+  <meta name="description" content="Real-time AI emergency response command center with live incident feed and dispatch management." />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =====================================================
+       DESIGN TOKENS
+       ===================================================== */
+    :root {
+      --bg:            #050a10;
+      --bg-mid:        #07101a;
+      --panel:         #0b1522;
+      --panel-raised:  #0e1d30;
+      --panel-glass:   rgba(11, 21, 34, 0.80);
+      --border:        rgba(59, 158, 255, 0.12);
+      --border-hard:   rgba(59, 158, 255, 0.22);
+      --text:          #eaf0f8;
+      --text-sub:      #a8bbd0;
+      --text-muted:    #5a7a9a;
+      --text-dim:      #3a5070;
+      --low:           #22d47a;
+      --low-bg:        rgba(34, 212, 122, 0.08);
+      --medium:        #f59e0b;
+      --medium-bg:     rgba(245, 158, 11, 0.08);
+      --critical:      #ff3d47;
+      --critical-bg:   rgba(255, 61, 71, 0.08);
+      --accent:        #3b9eff;
+      --accent-bright: #5ab8ff;
+      --accent-bg:     rgba(59, 158, 255, 0.10);
+      --accent-glow:   rgba(59, 158, 255, 0.30);
+      --font-display:  'IBM Plex Mono', monospace;
+      --font-body:     'Inter', sans-serif;
+      --header-h:      64px;
+      --sidebar-w:     374px;
+      --radius:        10px;
+      --radius-sm:     6px;
+      --radius-lg:     14px;
+    }
+
+    /* =====================================================
+       RESET
+       ===================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(59,158,255,0.2); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* =====================================================
+       HEADER
+       ===================================================== */
+    #console-header {
+      height: var(--header-h);
+      background: var(--panel-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 24px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 100;
+    }
+
+    /* Subtle top highlight */
+    #console-header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(59,158,255,0.4), transparent);
+    }
+
+    #brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      min-width: 200px;
+    }
+
+    #brand-mark {
+      font-size: 26px;
+      filter: drop-shadow(0 0 10px rgba(59, 158, 255, 0.65));
+      animation: markPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes markPulse {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(59,158,255,0.55)); }
+      50%       { filter: drop-shadow(0 0 20px rgba(59,158,255,0.95)); }
+    }
+
+    #brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    #tagline {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* Header nav */
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .nav-link {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      transition: all 0.18s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      border-color: var(--border-hard);
+      background: var(--accent-bg);
+    }
+
+    .nav-link.active {
+      color: var(--accent-bright);
+      background: var(--accent-bg);
+      border-color: rgba(59,158,255,0.25);
+    }
+
+    /* Pulse SVG */
+    #pulse-line {
+      flex: 1;
+      max-width: 340px;
+      height: 36px;
+    }
+
+    #pulse-path {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: d 0.12s ease;
+    }
+
+    #pulse-path.spike { stroke: var(--critical); }
+
+    /* Connection status */
+    #connection-status {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--border-hard);
+      color: var(--medium);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    #connection-status .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    #connection-status.connected {
+      color: var(--low);
+      border-color: rgba(34, 212, 122, 0.35);
+      background: rgba(34, 212, 122, 0.06);
+    }
+
+    #connection-status.connected .live-dot {
+      animation: livePulse 1.8s ease-in-out infinite;
+    }
+
+    #connection-status.disconnected {
+      color: var(--critical);
+      border-color: rgba(255, 61, 71, 0.35);
+      background: rgba(255, 61, 71, 0.06);
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.35; transform: scale(0.7); }
+    }
+
+    /* =====================================================
+       MAIN LAYOUT
+       ===================================================== */
+    #main {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* =====================================================
+       SIDEBAR
+       ===================================================== */
+    #sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .incident-count {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border: 1px solid rgba(59,158,255,0.25);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    /* Incident feed */
+    #cases-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+
+    #cases { display: flex; flex-direction: column; gap: 10px; }
+
+    /* =====================================================
+       INCIDENT CARDS
+       ===================================================== */
+    .empty-state {
+      text-align: center;
+      padding: 36px 16px;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      border: 1px dashed rgba(59,158,255,0.12);
+      border-radius: var(--radius);
+    }
+
+    .empty-state-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.5; }
+
+    .case-card {
+      background: var(--panel-raised);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 13px 14px;
+      cursor: default;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+      animation: cardEnter 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .case-card:hover {
+      border-color: var(--border-hard);
+      transform: translateX(2px);
+    }
+
+    .case-card.LOW      { border-left-color: var(--low); }
+    .case-card.MEDIUM   { border-left-color: var(--medium); }
+    .case-card.CRITICAL { border-left-color: var(--critical); box-shadow: -4px 0 16px rgba(255,61,71,0.12); }
+    .case-card.CRITICAL:hover { box-shadow: -4px 0 24px rgba(255,61,71,0.2); }
+
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .case-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+
+    .case-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+
+    .badge.LOW      { background: var(--low-bg);      color: var(--low);      border-color: rgba(34,212,122,0.25); }
+    .badge.MEDIUM   { background: var(--medium-bg);   color: var(--medium);   border-color: rgba(245,158,11,0.25); }
+    .badge.CRITICAL { background: var(--critical-bg); color: var(--critical); border-color: rgba(255,61,71,0.30);
+                      animation: badgeGlow 2s ease-in-out infinite; }
+    .badge.CLEAR    { background: rgba(90,122,154,0.10); color: var(--text-muted); border-color: rgba(90,122,154,0.2); }
+
+    @keyframes badgeGlow {
+      0%,100% { box-shadow: none; }
+      50%      { box-shadow: 0 0 8px rgba(255,61,71,0.4); }
+    }
+
+    .case-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 10px;
+    }
+
+    .case-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .case-detail b {
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+
+    .case-timestamp {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* =====================================================
+       TRIGGER PANEL
+       ===================================================== */
+    #trigger-panel {
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      background: var(--bg-mid);
+      flex-shrink: 0;
+    }
+
+    .trigger-title {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trigger-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-display);
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,158,255,0.12);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    #trigger-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--critical);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    }
+
+    #trigger-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+
+    #trigger-btn:hover::after { transform: translateX(100%); }
+
+    #trigger-btn:hover {
+      background: #ff5560;
+      box-shadow: 0 0 20px rgba(255,61,71,0.4);
+    }
+
+    #trigger-btn:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    #trigger-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* =====================================================
+       CONTENT AREA
+       ===================================================== */
+    #content {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    #content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* =====================================================
+       STATS ROW
+       ===================================================== */
+    #stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s ease;
+    }
+
+    .stat::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(59,158,255,0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .stat:hover { border-color: var(--border-hard); }
+    .stat:hover::before { opacity: 1; }
+
+    .stat-label {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      transition: color 0.3s ease;
+    }
+
+    #severity-value.CRITICAL { color: var(--critical); }
+    #severity-value.MEDIUM   { color: var(--medium); }
+    #severity-value.LOW      { color: var(--low); }
+    #confidence-value        { color: var(--accent-bright); }
+
+    /* =====================================================
+       MAP (CENTERPIECE)
+       ===================================================== */
+    #map-wrapper {
+      flex: 1;
+      min-height: 300px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Map overlay label */
+    #map-wrapper::before {
+      content: 'LIVE MAP';
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 500;
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #fff;
+      background: rgba(5, 10, 16, 0.75);
+      backdrop-filter: blur(8px);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(59,158,255,0.2);
+    }
+
+    #map { height: 100%; width: 100%; }
+
+    /* Leaflet dark tile filter */
+    .leaflet-tile-pane {
+      filter: brightness(0.78) saturate(0.4) hue-rotate(200deg);
+    }
+
+    /* =====================================================
+       DISPATCH + VIDEO ROW
+       ===================================================== */
+    #bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Video panel */
+    #video-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #video-header {
+      height: 40px;
+      padding: 0 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .video-label {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #video-status {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--low);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #video-status .live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: livePulse 1.8s ease-in-out infinite;
+    }
+
+    #video-status.alert {
+      color: var(--critical);
+      animation: alertFlash 0.8s ease-in-out infinite;
+    }
+
+    @keyframes alertFlash {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.5; }
+    }
+
+    @keyframes livePulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.35; transform: scale(0.7); }
+    }
+
+    #incident-video {
+      display: block;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: #020608;
+      max-height: 200px;
+      object-fit: cover;
+    }
+
+    /* Dispatch cards */
+    #dispatch {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dispatch-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s ease;
+    }
+
+    .dispatch-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: 0.6;
+    }
+
+    .dispatch-card.ambulance::after { background: var(--low); }
+    .dispatch-card.hospital::after  { background: var(--accent); }
+
+    .dispatch-card:hover { border-color: var(--border-hard); }
+
+    .dispatch-title {
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+
+    .dispatch-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+
+    .dispatch-detail {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      padding-left: 4px;
+      font-family: var(--font-display);
+    }
+
+    .dispatch-detail b { color: var(--text-sub); font-style: normal; }
+
+    .dispatch-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-display);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid;
+      margin-top: 6px;
+      margin-left: 4px;
+    }
+
+    .dispatch-status.ready       { color: var(--text-muted); border-color: var(--border); }
+    .dispatch-status.dispatched  { color: var(--low); border-color: rgba(34,212,122,0.3); background: var(--low-bg); }
+    .dispatch-status.alerted     { color: var(--accent-bright); border-color: rgba(59,158,255,0.3); background: var(--accent-bg); }
+    .dispatch-status.unavailable { color: var(--critical); border-color: rgba(255,61,71,0.3); background: var(--critical-bg); }
+
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
+    @media (max-width: 1100px) {
+      :root { --sidebar-w: 300px; }
+      #stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 800px) {
+      #main { display: block; overflow-y: auto; }
+      #sidebar { height: auto; max-height: 60vh; }
+      #content { overflow: visible; }
+      #content-scroll { overflow: visible; }
+      #bottom-row { grid-template-columns: 1fr; }
+      #map-wrapper { min-height: 280px; }
+      #pulse-line { display: none; }
+    }
+
+    /* =====================================================
+       ANIMATIONS
+       ===================================================== */
+    @keyframes slideInDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes flashGlow {
+      0% { opacity: 1; }
+      30% { opacity: 0.4; }
+      60% { opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* =====================================================
+       EVIDENCE BUTTON (on incident cards)
+       ===================================================== */
+    .evidence-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 6px 13px;
+      background: var(--accent-bg);
+      color: var(--accent-bright);
+      border: 1px solid rgba(59,158,255,0.28);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+      width: 100%;
+      justify-content: center;
+    }
+    .evidence-btn:hover {
+      background: rgba(59,158,255,0.18);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .evidence-btn:active { transform: translateY(0); }
+
+    /* incident-id label on card */
+    .card-incident-id {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--accent-bright);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* =====================================================
+       EVIDENCE MODAL
+       ===================================================== */
+    #evidence-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(3, 7, 14, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #evidence-overlay.open {
+      display: flex;
+      animation: modalFadeIn 0.28s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    #evidence-modal {
+      background: var(--panel);
+      border: 1px solid var(--border-hard);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 860px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+      animation: modalSlideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    #evidence-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-title-group { display: flex; align-items: center; gap: 12px; }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    #modal-incident-id {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-bright);
+      letter-spacing: 1.5px;
+    }
+
+    #modal-severity-badge {
+      font-family: var(--font-display);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid;
+    }
+    #modal-severity-badge.CRITICAL { color: var(--critical); background: var(--critical-bg); border-color: rgba(255,61,71,0.3); }
+    #modal-severity-badge.MEDIUM   { color: var(--medium);   background: var(--medium-bg);   border-color: rgba(245,158,11,0.3); }
+    #modal-severity-badge.LOW      { color: var(--low);      background: var(--low-bg);      border-color: rgba(34,212,122,0.3); }
+
+    #modal-close-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 18px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      line-height: 1;
+    }
+    #modal-close-btn:hover { color: var(--text); border-color: var(--border-hard); background: var(--panel-raised); }
+
+    /* Evidence image */
+    #evidence-frame-wrap {
+      position: relative;
+      background: #020608;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #modal-evidence-img {
+      display: block;
+      width: 100%;
+      max-height: 440px;
+      object-fit: contain;
+    }
+
+    #modal-no-image {
+      display: none;
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    /* Metadata grid */
+    #evidence-metadata {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 24px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .meta-label {
+      font-family: var(--font-display);
+      font-size: 8px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .meta-value {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .meta-value.accent { color: var(--accent-bright); font-family: var(--font-display); font-size: 12px; }
+    .meta-value.green  { color: var(--low); }
+    .meta-value.yellow { color: var(--medium); }
+    .meta-value.red    { color: var(--critical); }
+
+    /* Modal loading state */
+    #modal-loading {
+      display: none;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .modal-spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-
 
 <body>
 
+<!-- =====================================================
+     TOAST CONTAINER
+     ===================================================== -->
+<div id="toast-container" style="
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  display:flex;flex-direction:column;gap:10px;pointer-events:none;
+"></div>
 
-<!-- =========================================================
+<!-- =====================================================
+     EVIDENCE MODAL
+     ===================================================== -->
+<div id="evidence-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-incident-id">
+  <div id="evidence-modal">
+
+    <!-- Modal header -->
+    <div id="evidence-modal-header">
+      <div class="modal-title-group">
+        <span class="modal-title">Incident Evidence</span>
+        <span id="modal-incident-id">—</span>
+        <span id="modal-severity-badge" class="">—</span>
+      </div>
+      <button id="modal-close-btn" aria-label="Close evidence modal" title="Close (Esc)">✕</button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="modal-loading">
+      <div class="modal-spinner"></div>
+      Loading evidence...
+    </div>
+
+    <!-- Evidence frame -->
+    <div id="evidence-frame-wrap">
+      <img id="modal-evidence-img" src="" alt="Evidence frame" />
+      <div id="modal-no-image">📷 No evidence frame captured for this incident.</div>
+    </div>
+
+    <!-- Metadata -->
+    <div id="evidence-metadata">
+      <div class="meta-row">
+        <span class="meta-label">Incident ID</span>
+        <span class="meta-value accent" id="meta-incident-id">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Timestamp</span>
+        <span class="meta-value" id="meta-timestamp">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Location</span>
+        <span class="meta-value" id="meta-location">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Severity</span>
+        <span class="meta-value" id="meta-severity">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Score</span>
+        <span class="meta-value" id="meta-score">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">AI Confidence</span>
+        <span class="meta-value" id="meta-confidence">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Vehicles Involved</span>
+        <span class="meta-value" id="meta-vehicles">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Detection Reason</span>
+        <span class="meta-value" id="meta-reason">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Event Time</span>
+        <span class="meta-value" id="meta-event-time">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Event Frame</span>
+        <span class="meta-value" id="meta-event-frame">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Ambulance</span>
+        <span class="meta-value" id="meta-ambulance">—</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Hospital</span>
+        <span class="meta-value" id="meta-hospital">—</span>
+      </div>
+      <div class="meta-row" style="grid-column: 1 / -1;">
+        <span class="meta-label">Evidence Image</span>
+        <span class="meta-value accent" id="meta-evidence-path">—</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =====================================================
      HEADER
-     ========================================================= -->
-
+     ===================================================== -->
 <header id="console-header">
 
-
-    <div id="brand">
-
-        <span id="brand-mark">
-            ⚡
-        </span>
-
-
-        <div>
-
-            <h1>
-                REFLEX
-            </h1>
-
-
-            <div id="tagline">
-                Faster than the first call.
-            </div>
-
-        </div>
-
+  <a id="brand" href="/">
+    <span id="brand-mark">⚡</span>
+    <div id="brand-text">
+      <h1>REFLEX</h1>
+      <div id="tagline">AI Emergency Response</div>
     </div>
+  </a>
 
+  <svg id="pulse-line" viewBox="0 0 300 36" preserveAspectRatio="none">
+    <path id="pulse-path" d="M0,18 L300,18" />
+  </svg>
 
-    <svg
-        id="pulse-line"
-        viewBox="0 0 300 40"
-        preserveAspectRatio="none"
-    >
+  <nav class="header-nav">
+    <a href="/" class="nav-link">Home</a>
+    <a href="/dashboard" class="nav-link active">Console</a>
+    <a href="/hospital" class="nav-link">Hospital</a>
+  </nav>
 
-        <path
-            id="pulse-path"
-            d="M0,20 L300,20"
-        />
-
-    </svg>
-
-
-    <div id="connection-status">
-        Connecting...
-    </div>
-
+  <div id="connection-status">
+    <span class="live-dot"></span>
+    Connecting...
+  </div>
 
 </header>
 
 
-<!-- =========================================================
+<!-- =====================================================
      MAIN
-     ========================================================= -->
-
+     ===================================================== -->
 <div id="main">
 
+  <!-- ===================================================
+       SIDEBAR
+       =================================================== -->
+  <aside id="sidebar">
 
-    <!-- =====================================================
-         SIDEBAR
-         ===================================================== -->
+    <div class="sidebar-header">
+      <div class="section-title">
+        Incident Feed
+        <span class="incident-count" id="incident-count">0</span>
+      </div>
+    </div>
 
-    <aside id="sidebar">
-
-
-        <div class="section-title">
-            Incident Feed
+    <div id="cases-scroll">
+      <div id="cases">
+        <div class="empty-state">
+          <div class="empty-state-icon">📡</div>
+          No incidents detected.<br>Trigger a simulation below.
         </div>
+      </div>
+    </div>
 
+    <!-- Simulate Panel -->
+    <div id="trigger-panel">
+      <div class="trigger-title">Simulate Accident</div>
 
-        <div id="cases">
+      <div class="form-group">
+        <label class="form-label" for="clipName">Video Clip</label>
+        <input id="clipName" class="form-input" value="traffic.mp4" />
+      </div>
 
-            <div class="empty-state">
-
-                No incidents yet.
-
-                <br>
-
-                Trigger a simulation below.
-
-            </div>
-
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="lat">Latitude</label>
+          <input id="lat" class="form-input" value="28.4744" />
         </div>
-
-
-        <!-- =================================================
-             SIMULATE
-             ================================================= -->
-
-        <div id="trigger-panel">
-
-
-            <div class="section-title">
-                Simulate Accident
-            </div>
-
-
-            <label>
-
-                Clip file
-
-                <input
-                    id="clipName"
-                    value="traffic.mp4"
-                >
-
-            </label>
-
-
-            <label>
-
-                Latitude
-
-                <input
-                    id="lat"
-                    value="28.4744"
-                >
-
-            </label>
-
-
-            <label>
-
-                Longitude
-
-                <input
-                    id="lng"
-                    value="77.5040"
-                >
-
-            </label>
-
-
-            <button
-                id="trigger-btn"
-            >
-
-                Trigger Accident
-
-            </button>
-
-
+        <div class="form-group">
+          <label class="form-label" for="lng">Longitude</label>
+          <input id="lng" class="form-input" value="77.5040" />
         </div>
+      </div>
+
+      <button id="trigger-btn">⚡ Trigger Accident</button>
+    </div>
+
+  </aside>
 
 
-    </aside>
+  <!-- ===================================================
+       CONTENT
+       =================================================== -->
+  <section id="content">
+    <div id="content-scroll">
 
+      <!-- Stats Row -->
+      <div id="stats">
+        <div class="stat">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" id="incident-status">MONITORING</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Severity</div>
+          <div class="stat-value" id="severity-value">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Confidence</div>
+          <div class="stat-value" id="confidence-value">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Vehicles</div>
+          <div class="stat-value" id="vehicles-value">—</div>
+        </div>
+      </div>
 
-    <!-- =====================================================
-         CONTENT
-         ===================================================== -->
+      <!-- MAP (Centerpiece) -->
+      <div id="map-wrapper">
+        <div id="map"></div>
+      </div>
 
-    <section id="content">
+      <!-- Bottom row: Video + Dispatch -->
+      <div id="bottom-row">
 
-
-        <!-- =================================================
-             VIDEO
-             ================================================= -->
-
+        <!-- CCTV / AI Vision -->
         <div id="video-panel">
-
-
-            <div id="video-header">
-
-                <span>
-                    🎥 CCTV / AI VISION
-                </span>
-
-
-                <span id="video-status">
-                    ● MONITORING
-                </span>
-
-            </div>
-
-
-            <video
-                id="incident-video"
-                controls
-                muted
-                preload="metadata"
-            >
-
-                <source
-                    src="/videos/traffic.mp4"
-                    type="video/mp4"
-                >
-
-                Your browser does not support video.
-
-            </video>
-
-
+          <div id="video-header">
+            <span class="video-label">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
+                <circle cx="5" cy="5" r="2" fill="currentColor" opacity="0.6"/>
+              </svg>
+              CCTV / AI Vision
+            </span>
+            <span id="video-status">
+              <span class="live-dot"></span>
+              MONITORING
+            </span>
+          </div>
+          <video id="incident-video" controls muted preload="metadata">
+            <source src="/videos/traffic.mp4" type="video/mp4" />
+            Your browser does not support video.
+          </video>
         </div>
 
-
-        <!-- =================================================
-             STATS
-             ================================================= -->
-
-        <div id="stats">
-
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    STATUS
-                </div>
-
-
-                <div
-                    class="stat-value"
-                    id="incident-status"
-                >
-                    MONITORING
-                </div>
-
-            </div>
-
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    SEVERITY
-                </div>
-
-
-                <div
-                    class="stat-value"
-                    id="severity-value"
-                >
-                    —
-                </div>
-
-            </div>
-
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    CONFIDENCE
-                </div>
-
-
-                <div
-                    class="stat-value"
-                    id="confidence-value"
-                >
-                    —
-                </div>
-
-            </div>
-
-
-            <div class="stat">
-
-                <div class="stat-label">
-                    VEHICLES
-                </div>
-
-
-                <div
-                    class="stat-value"
-                    id="vehicles-value"
-                >
-                    —
-                </div>
-
-            </div>
-
-
-        </div>
-
-
-        <!-- =================================================
-             DISPATCH
-             ================================================= -->
-
+        <!-- Dispatch -->
         <div id="dispatch">
 
-
-            <div class="dispatch-card">
-
-
-                <div class="dispatch-title">
-                    🚑 AMBULANCE DISPATCH
-                </div>
-
-
-                <div
-                    class="dispatch-name"
-                    id="ambulance-name"
-                >
-                    Waiting for incident
-                </div>
-
-
-                <div
-                    class="dispatch-detail"
-                    id="ambulance-distance"
-                >
-                    Distance: —
-                </div>
-
-
-                <div
-                    class="dispatch-detail"
-                    id="ambulance-eta"
-                >
-                    ETA: —
-                </div>
-
-
-                <div
-                    class="dispatch-detail dispatch-ready"
-                    id="ambulance-status"
-                >
-                    ● STANDBY
-                </div>
-
-
+          <div class="dispatch-card ambulance">
+            <div class="dispatch-title">🚑 Ambulance Dispatch</div>
+            <div class="dispatch-name" id="ambulance-name">Waiting for incident</div>
+            <div class="dispatch-detail" id="ambulance-distance">Distance: —</div>
+            <div class="dispatch-detail" id="ambulance-eta">ETA: —</div>
+            <div class="dispatch-status ready" id="ambulance-status">
+              <span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span>
+              STANDBY
             </div>
+          </div>
 
-
-            <div class="dispatch-card">
-
-
-                <div class="dispatch-title">
-                    🏥 HOSPITAL ALERT
-                </div>
-
-
-                <div
-                    class="dispatch-name"
-                    id="hospital-name"
-                >
-                    Waiting for incident
-                </div>
-
-
-                <div
-                    class="dispatch-detail"
-                    id="hospital-distance"
-                >
-                    Distance: —
-                </div>
-
-
-                <div
-                    class="dispatch-detail"
-                    id="hospital-eta"
-                >
-                    ETA: —
-                </div>
-
-
-                <div
-                    class="dispatch-detail dispatch-ready"
-                    id="hospital-status"
-                >
-                    ● STANDBY
-                </div>
-
-
+          <div class="dispatch-card hospital">
+            <div class="dispatch-title">🏥 Hospital Alert</div>
+            <div class="dispatch-name" id="hospital-name">Waiting for incident</div>
+            <div class="dispatch-detail" id="hospital-distance">Distance: —</div>
+            <div class="dispatch-detail" id="hospital-eta">ETA: —</div>
+            <div class="dispatch-status ready" id="hospital-status">
+              <span style="width:5px;height:5px;border-radius:50%;background:currentColor;"></span>
+              STANDBY
             </div>
-
+          </div>
 
         </div>
 
+      </div><!-- /bottom-row -->
 
-        <!-- =================================================
-             MAP
-             ================================================= -->
+    </div><!-- /content-scroll -->
+  </section>
 
-        <div id="map-wrapper">
-
-            <div id="map"></div>
-
-        </div>
+</div><!-- /main -->
 
 
-    </section>
-
-
-</div>
-
-
-<!-- =========================================================
-     JAVASCRIPT
-     ========================================================= -->
-
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-></script>
-
-
-<script
-    src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"
-></script>
-
-
-<script
-    src="{{ url_for('static', filename='js/dashboard.js') }}"
-></script>
-
+<!-- =====================================================
+     SCRIPTS
+     ===================================================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
 </body>
-
 </html>

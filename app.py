@@ -111,6 +111,21 @@ def serve_video(filename):
 
 
 # =========================================================
+# EVIDENCE IMAGE SERVING
+# =========================================================
+
+@app.route("/evidence/<path:filename>")
+def serve_evidence(filename):
+    """Serve captured accident evidence frames."""
+
+    return send_from_directory(
+        "evidence",
+        filename
+    )
+
+
+
+# =========================================================
 # START SERVER
 # =========================================================
 

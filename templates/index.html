@@ -3,24 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reflex — AI Emergency Response Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>REFLEX — AI Emergency Response Network</title>
+  <meta name="description" content="AI-powered accident detection, severity scoring, and automatic hospital dispatch — cutting the delay between impact and response." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
+
 <body class="landing">
   <div class="landing-wrap">
-    <span id="brand-mark">⚡</span>
-    <h1>REFLEX</h1>
+
+    <!-- Brand -->
+    <div class="landing-brand">
+      <span class="landing-mark">⚡</span>
+      <h1>REFLEX</h1>
+    </div>
+
     <p id="tagline">Faster than the first call.</p>
+
+    <div class="landing-divider"></div>
+
     <p class="landing-desc">
-      AI-powered accident detection, severity scoring, and automatic
+      AI-powered accident detection, severity scoring, and automatic<br>
       hospital dispatch — cutting the delay between impact and response.
     </p>
+
+    <!-- Feature chips -->
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:36px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:rgba(59,158,255,0.08);border:1px solid rgba(59,158,255,0.2);color:#5ab8ff;">AI Vision</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:rgba(34,212,122,0.08);border:1px solid rgba(34,212,122,0.2);color:#22d47a;">Live Dispatch</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:999px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);color:#f59e0b;">Severity Scoring</span>
+    </div>
+
     <div class="landing-links">
       <a href="{{ url_for('dashboard') }}" class="btn-primary">Open Response Console</a>
       <a href="{{ url_for('hospital_view') }}" class="btn-secondary">Hospital View</a>
     </div>
+
+    <div class="landing-footer">
+      REFLEX v2 &nbsp;·&nbsp; AI Emergency Response &nbsp;·&nbsp; Real-Time
+    </div>
+
   </div>
 </body>
 </html>

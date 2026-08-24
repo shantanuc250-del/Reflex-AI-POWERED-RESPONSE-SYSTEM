@@ -9,13 +9,15 @@ ACCIDENT DETECTION
   ↓
 SEVERITY
   ↓
-INCIDENT ID
+INCIDENT ID  (RX-YYYY-NNN)
   ↓
 AMBULANCE DISPATCH
   ↓
 HOSPITAL SELECTION
   ↓
-DATABASE
+EVIDENCE FRAME CAPTURE  ← NEW
+  ↓
+DATABASE  (accidents + incidents tables)
   ↓
 SOCKET.IO
   ↓
@@ -37,6 +39,8 @@ from database.db import get_db
 from ai.accident import analyze_video
 
 from ai.severity import score_severity
+
+from ai.evidence import capture_evidence_frame
 
 from dispatch.dispatcher import (
     dispatch_emergency
@@ -198,12 +202,14 @@ def simulate(clip_name):
     # BASE PAYLOAD
     # =====================================================
 
+    timestamp_iso = datetime.now(
+        timezone.utc
+    ).isoformat()
+
     payload = {
 
         "timestamp":
-            datetime.now(
-                timezone.utc
-            ).isoformat(),
+            timestamp_iso,
 
 
         "clip":
@@ -236,11 +242,14 @@ def simulate(clip_name):
     # EMERGENCY DISPATCH
     # =====================================================
 
-    hospital_id = None
-
-    distance_km = None
-
+    hospital_id  = None
+    distance_km  = None
     duration_min = None
+
+    incident_id         = None
+    evidence_image_path = None
+    ambulance           = None
+    hospital            = None
 
 
     if detection_result.get(
@@ -434,8 +443,58 @@ def simulate(clip_name):
 
 
     # =====================================================
-    # STEP 4
-    # DATABASE
+    # STEP 4 — NEW
+    # EVIDENCE FRAME CAPTURE
+    # Runs only when an accident was confirmed and we
+    # have a valid incident_id + event_frame
+    # =====================================================
+
+    if (
+        detection_result.get("event_detected")
+        and incident_id
+        and detection_result.get("event_frame") is not None
+    ):
+
+        print()
+        print("📸 Capturing evidence frame...")
+
+        try:
+
+            evidence_image_path = capture_evidence_frame(
+
+                video_path  = clip_path,
+
+                event_frame = detection_result.get("event_frame"),
+
+                incident_id = incident_id,
+
+                severity    = severity_result.get("severity", "UNKNOWN"),
+
+                timestamp   = datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
+                )
+
+            )
+
+            if evidence_image_path:
+
+                payload["evidence_image_path"] = evidence_image_path
+
+                print(f"✅ Evidence saved: {evidence_image_path}")
+
+            else:
+
+                print("⚠️ Evidence capture returned None")
+
+
+        except Exception as ev_err:
+
+            print(f"⚠️ Evidence capture error: {ev_err}")
+
+
+    # =====================================================
+    # STEP 5
+    # DATABASE — accidents (existing table, unchanged)
     # =====================================================
 
     conn = get_db()
@@ -531,13 +590,80 @@ def simulate(clip_name):
     )
 
 
-    conn.commit()
+    # =====================================================
+    # STEP 5b — NEW
+    # DATABASE — incidents (new evidence table)
+    # Only written when an accident is confirmed
+    # =====================================================
 
+    if (
+        detection_result.get("event_detected")
+        and incident_id
+    ):
+
+        payload["status"] = "DETECTED"
+
+        conn.execute(
+
+            """
+            INSERT OR REPLACE INTO incidents
+            (
+                incident_id,
+                timestamp,
+                clip,
+                lat,
+                lng,
+                severity,
+                score,
+                confidence,
+                reason,
+                vehicles_involved,
+                event_frame,
+                event_time_sec,
+                ambulance_id,
+                ambulance_name,
+                ambulance_eta,
+                hospital_name,
+                hospital_eta,
+                evidence_image_path,
+                status,
+                acknowledged_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+
+            (
+                incident_id,
+                timestamp_iso,
+                clip_name,
+                lat,
+                lng,
+                severity_result.get("severity"),
+                severity_result.get("score"),
+                detection_result.get("confidence", 0),
+                detection_result.get("reason"),
+                vehicles_involved,
+                detection_result.get("event_frame"),
+                detection_result.get("event_time_sec"),
+                ambulance.get("id")   if ambulance else None,
+                ambulance.get("name") if ambulance else None,
+                ambulance.get("eta_minutes") if ambulance else None,
+                hospital.get("name")  if hospital else None,
+                hospital.get("eta_minutes") if hospital else None,
+                evidence_image_path,
+                "DETECTED",
+                None
+            )
+
+        )
+
+
+    conn.commit()
     conn.close()
 
 
     # =====================================================
-    # STEP 5
+    # STEP 6
     # REAL-TIME BROADCAST
     # =====================================================
 
@@ -596,7 +722,83 @@ def simulate(clip_name):
 
 
 # =========================================================
-# LIST PREVIOUS ACCIDENTS
+# GET SINGLE INCIDENT EVIDENCE RECORD
+# =========================================================
+
+@accidents_bp.route(
+    "/evidence/<incident_id>",
+    methods=["GET"]
+)
+def get_evidence(incident_id):
+    """
+    Return the full evidence record for a given incident ID.
+
+    Example:
+        GET /api/accidents/evidence/RX-2026-001
+    """
+
+    conn = get_db()
+
+    row = conn.execute(
+
+        """
+        SELECT *
+        FROM incidents
+        WHERE incident_id = ?
+        """,
+
+        (incident_id,)
+
+    ).fetchone()
+
+    conn.close()
+
+
+    if row is None:
+
+        return jsonify({
+            "error": f"Incident not found: {incident_id}"
+        }), 404
+
+
+    return jsonify(
+        dict(row)
+    )
+
+
+# =========================================================
+# LIST ALL EVIDENCE RECORDS
+# =========================================================
+
+@accidents_bp.route(
+    "/evidence",
+    methods=["GET"]
+)
+def list_evidence():
+    """Return all evidence records, newest first."""
+
+    conn = get_db()
+
+    rows = conn.execute(
+
+        """
+        SELECT *
+        FROM incidents
+        ORDER BY timestamp DESC
+        LIMIT 100
+        """
+
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify(
+        [dict(row) for row in rows]
+    )
+
+
+# =========================================================
+# LIST PREVIOUS ACCIDENTS  (original endpoint — unchanged)
 # =========================================================
 
 @accidents_bp.route(
@@ -631,3 +833,121 @@ def list_accidents():
         ]
 
     )
+
+
+# =========================================================
+# NOTIFY INCIDENT  (status DETECTED -> NOTIFIED)
+# =========================================================
+
+@accidents_bp.route(
+    "/notify/<incident_id>",
+    methods=["POST"]
+)
+def notify_incident(incident_id):
+    """
+    Transition incident status from DETECTED to NOTIFIED.
+    This signifies that the hospital has received the alert.
+    """
+    conn = get_db()
+    
+    # Check if incident exists
+    row = conn.execute(
+        "SELECT status FROM incidents WHERE incident_id = ?",
+        (incident_id,)
+    ).fetchone()
+    
+    if not row:
+        conn.close()
+        return jsonify({"error": f"Incident {incident_id} not found"}), 404
+        
+    current_status = row["status"]
+    
+    # Only transition if it is currently DETECTED
+    if current_status == "DETECTED":
+        conn.execute(
+            "UPDATE incidents SET status = 'NOTIFIED' WHERE incident_id = ?",
+            (incident_id,)
+        )
+        conn.commit()
+        status_updated = True
+        new_status = "NOTIFIED"
+    else:
+        status_updated = False
+        new_status = current_status
+        
+    conn.close()
+    
+    if status_updated and socketio:
+        socketio.emit(
+            "incident_status_change",
+            {
+                "incident_id": incident_id,
+                "status": new_status
+            }
+        )
+        
+    return jsonify({
+        "success": True,
+        "incident_id": incident_id,
+        "status": new_status,
+        "updated": status_updated
+    })
+
+
+# =========================================================
+# ACKNOWLEDGE INCIDENT  (status NOTIFIED -> ACKNOWLEDGED)
+# =========================================================
+
+@accidents_bp.route(
+    "/acknowledge/<incident_id>",
+    methods=["POST"]
+)
+def acknowledge_incident(incident_id):
+    """
+    Transition incident status from DETECTED/NOTIFIED to ACKNOWLEDGED.
+    Stores the acknowledgment timestamp in the database.
+    """
+    from datetime import datetime, timezone
+    
+    conn = get_db()
+    
+    # Check if incident exists
+    row = conn.execute(
+        "SELECT status FROM incidents WHERE incident_id = ?",
+        (incident_id,)
+    ).fetchone()
+    
+    if not row:
+        conn.close()
+        return jsonify({"error": f"Incident {incident_id} not found"}), 404
+        
+    acknowledged_at = datetime.now(timezone.utc).isoformat()
+    
+    conn.execute(
+        """
+        UPDATE incidents
+        SET status = 'ACKNOWLEDGED',
+            acknowledged_at = ?
+        WHERE incident_id = ?
+        """,
+        (acknowledged_at, incident_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    if socketio:
+        socketio.emit(
+            "incident_status_change",
+            {
+                "incident_id": incident_id,
+                "status": "ACKNOWLEDGED",
+                "acknowledged_at": acknowledged_at
+            }
+        )
+        
+    return jsonify({
+        "success": True,
+        "incident_id": incident_id,
+        "status": "ACKNOWLEDGED",
+        "acknowledged_at": acknowledged_at
+    })
