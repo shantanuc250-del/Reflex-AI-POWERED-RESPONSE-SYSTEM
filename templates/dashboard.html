@@ -893,7 +893,7 @@
       border: 1px solid var(--border-hard);
       border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 860px;
+      max-width: 1100px;
       max-height: 90vh;
       overflow-y: auto;
       box-shadow: 0 24px 80px rgba(0,0,0,0.7);
@@ -1202,6 +1202,21 @@
       </div>
     </div>
 
+    <!-- Voice Alerts settings -->
+    <div style="border-top: 1px solid var(--border); padding: 14px 16px; background: var(--bg-mid); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+        🔊 Voice Alerts
+      </span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <label style="font-family: var(--font-display); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" id="voice-enable-chk" checked style="accent-color: var(--accent);" /> Enable
+        </label>
+        <label style="font-family: var(--font-display); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+          <input type="checkbox" id="voice-mute-chk" style="accent-color: var(--critical);" /> Mute
+        </label>
+      </div>
+    </div>
+
     <!-- Simulate Panel -->
     <div id="trigger-panel">
       <div class="trigger-title">Simulate Accident</div>
@@ -1311,6 +1326,120 @@
         </div>
 
       </div><!-- /bottom-row -->
+
+      <!-- Analytics Section -->
+      <div id="analytics-section" style="border-top: 1px solid var(--border); padding-top: 24px; margin-top: 10px; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-family: var(--font-display); font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--accent-bright); display: flex; align-items: center; gap: 8px;">
+            ⚡ Historical Analytics & Insights
+          </span>
+          <span id="analytics-last-update" style="font-family: var(--font-display); font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted);">
+            Updated: Just now
+          </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+          
+          <!-- Column 1: Total & Severity -->
+          <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);">
+              Incident Summary
+            </div>
+            
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+              <span style="font-size: 32px; font-weight: 900; color: var(--text); line-height: 1;" id="analytics-total">0</span>
+              <span style="font-family: var(--font-display); font-size: 10px; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase;">Total Incidents</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <div style="font-family: var(--font-display); font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted);">
+                Severity Breakdown
+              </div>
+              
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                  <span style="color: var(--critical);">Critical</span>
+                  <span style="font-family: var(--font-display);" id="analytics-crit-cnt">0</span>
+                </div>
+                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden;">
+                  <div id="analytics-crit-bar" style="height: 100%; background: var(--critical); width: 0%; transition: width 0.4s;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                  <span style="color: var(--medium);">Medium</span>
+                  <span style="font-family: var(--font-display);" id="analytics-med-cnt">0</span>
+                </div>
+                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden;">
+                  <div id="analytics-med-bar" style="height: 100%; background: var(--medium); width: 0%; transition: width 0.4s;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                  <span style="color: var(--low);">Low</span>
+                  <span style="font-family: var(--font-display);" id="analytics-low-cnt">0</span>
+                </div>
+                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden;">
+                  <div id="analytics-low-bar" style="height: 100%; background: var(--low); width: 0%; transition: width 0.4s;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Vehicle & Frequency -->
+          <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);">
+              Vehicles & Timeline
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font-family: var(--font-display); font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;">
+                Vehicles Involved
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span>🚗 Cars</span>
+                <span style="font-family: var(--font-display); font-weight: 600;" id="analytics-veh-car">0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span>🏍 Motorcycles</span>
+                <span style="font-family: var(--font-display); font-weight: 600;" id="analytics-veh-moto">0</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span>🚚 Trucks</span>
+                <span style="font-family: var(--font-display); font-weight: 600;" id="analytics-veh-truck">0</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-family: var(--font-display); font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;">
+                Recent Daily Activity
+              </div>
+              <div id="analytics-frequency-list" style="display: flex; flex-direction: column; gap: 3px; max-height: 70px; overflow-y: auto; padding-right: 4px;">
+                <div style="font-size: 11px; color: var(--text-muted); text-align: center; padding-top: 10px;">No timeline data.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Recurring Locations -->
+          <div style="background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);">
+              Top Hotspots
+            </div>
+            
+            <div style="font-family: var(--font-display); font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: -2px;">
+              Recurring Locations (Click to Center)
+            </div>
+            
+            <div id="analytics-locations-list" style="display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto;">
+              <div style="font-size: 11px; color: var(--text-muted); text-align: center; padding-top: 15px;">No hotspot data.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
     </div><!-- /content-scroll -->
   </section>

@@ -303,6 +303,9 @@ L.tileLayer(
     }
 ).addTo(map);
 
+fetchAndRenderHotspots();
+fetchAndRenderAnalytics();
+
 
 var mapMarkers = [];
 
@@ -701,6 +704,10 @@ function processIncident(payload) {
             isCritical ? 'error' : 'warning',
             6000
         );
+        
+        speakIncident(payload);
+        fetchAndRenderHotspots();
+        fetchAndRenderAnalytics();
     }
 
 }
@@ -801,4 +808,221 @@ if (videoEl) {
         console.warn('Could not load traffic.mp4');
     });
 
+}
+
+
+// ============================================================
+// VOICE ALERTS SYSTEM
+// ============================================================
+
+var voiceEnableChk = document.getElementById('voice-enable-chk');
+var voiceMuteChk   = document.getElementById('voice-mute-chk');
+
+// Load preferences from localStorage
+if (voiceEnableChk && voiceMuteChk) {
+    if (localStorage.getItem('reflex_voice_enabled') !== null) {
+        voiceEnableChk.checked = localStorage.getItem('reflex_voice_enabled') === 'true';
+    }
+    if (localStorage.getItem('reflex_voice_muted') !== null) {
+        voiceMuteChk.checked = localStorage.getItem('reflex_voice_muted') === 'true';
+    }
+
+    voiceEnableChk.addEventListener('change', function () {
+        localStorage.setItem('reflex_voice_enabled', voiceEnableChk.checked);
+    });
+
+    voiceMuteChk.addEventListener('change', function () {
+        localStorage.setItem('reflex_voice_muted', voiceMuteChk.checked);
+        if (voiceMuteChk.checked) {
+            window.speechSynthesis.cancel();
+        }
+    });
+}
+
+function speakIncident(payload) {
+    if (!voiceEnableChk || !voiceEnableChk.checked || (voiceMuteChk && voiceMuteChk.checked)) {
+        return;
+    }
+
+    var severity = (payload.severity && payload.severity.severity) || 'UNKNOWN';
+    if (severity !== 'CRITICAL' && severity !== 'MEDIUM') {
+        return;
+    }
+
+    var incidentId = payload.incident_id || 'Unknown';
+    var hospitalName = (payload.dispatch && payload.dispatch.hospital && payload.dispatch.hospital.name) || '';
+    
+    // Announce incident ID, severity, and hospital notification status
+    var hospitalStatus = hospitalName ? ('Hospital ' + hospitalName + ' is notified.') : 'Hospital notification status is pending.';
+    var text = 'Alert. High severity accident detected. Incident ID: ' + incidentId + '. Severity level: ' + severity + '. ' + hospitalStatus;
+    
+    window.speechSynthesis.cancel(); // cancel any active utterances
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+}
+
+
+// ============================================================
+// ACCIDENT HOTSPOT MAP OVERLAY
+// ============================================================
+
+var hotspotLayers = [];
+
+function fetchAndRenderHotspots() {
+    fetch('/api/accidents/hotspots')
+        .then(function (res) {
+            if (!res.ok) throw new Error('Hotspots fetch failed');
+            return res.json();
+        })
+        .then(function (data) {
+            // Remove previous hotspots
+            hotspotLayers.forEach(function (layer) {
+                map.removeLayer(layer);
+            });
+            hotspotLayers = [];
+
+            data.forEach(function (hotspot) {
+                var count = hotspot.count;
+                var color = count >= 5 ? '#ff3d47' : (count >= 2 ? '#f59e0b' : '#22d47a');
+                var radius = count >= 5 ? 150 : (count >= 2 ? 100 : 50);
+                var opacity = count >= 5 ? 0.35 : (count >= 2 ? 0.25 : 0.15);
+
+                var circle = L.circle([hotspot.lat, hotspot.lng], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: opacity,
+                    radius: radius,
+                    weight: 1.5,
+                    dashArray: '4, 4'
+                })
+                .addTo(map)
+                .bindPopup(
+                    '<strong>📍 Hazard Zone</strong><br>' +
+                    'Incident Count: <strong>' + count + '</strong><br>' +
+                    'Risk Level: <strong style="color:' + color + ';">' + (count >= 5 ? 'CRITICAL' : (count >= 2 ? 'MEDIUM' : 'LOW')) + '</strong>'
+                );
+
+                hotspotLayers.push(circle);
+            });
+        })
+        .catch(function (err) {
+            console.error('Error loading hotspots:', err);
+        });
+}
+
+
+// ============================================================
+// HISTORICAL ANALYTICS SYSTEM
+// ============================================================
+
+function fetchAndRenderAnalytics() {
+    fetch('/api/accidents/analytics')
+        .then(function (res) {
+            if (!res.ok) throw new Error('Analytics fetch failed');
+            return res.json();
+        })
+        .then(function (data) {
+            // Update last update timestamp
+            var updateEl = document.getElementById('analytics-last-update');
+            if (updateEl) {
+                var now = new Date().toLocaleTimeString('en-US', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                });
+                updateEl.textContent = 'Updated: ' + now;
+            }
+
+            // Update total
+            var totalEl = document.getElementById('analytics-total');
+            if (totalEl) {
+                totalEl.textContent = data.total_incidents;
+            }
+
+            // Update severity distributions
+            var dist = data.severity_distribution || {};
+            var total = data.total_incidents || 1;
+            if (total === 0) total = 1;
+
+            var critCnt = dist.CRITICAL || 0;
+            var medCnt = dist.MEDIUM || 0;
+            var lowCnt = dist.LOW || 0;
+
+            var critPct = Math.round((critCnt / total) * 100);
+            var medPct = Math.round((medCnt / total) * 100);
+            var lowPct = Math.round((lowCnt / total) * 100);
+
+            document.getElementById('analytics-crit-cnt').textContent = critCnt + ' (' + critPct + '%)';
+            document.getElementById('analytics-med-cnt').textContent = medCnt + ' (' + medPct + '%)';
+            document.getElementById('analytics-low-cnt').textContent = lowCnt + ' (' + lowPct + '%)';
+
+            document.getElementById('analytics-crit-bar').style.width = critPct + '%';
+            document.getElementById('analytics-med-bar').style.width = medPct + '%';
+            document.getElementById('analytics-low-bar').style.width = lowPct + '%';
+
+            // Update vehicle distribution
+            var veh = data.vehicle_types || {};
+            document.getElementById('analytics-veh-car').textContent = veh.Car || 0;
+            document.getElementById('analytics-veh-moto').textContent = veh.Motorcycle || 0;
+            document.getElementById('analytics-veh-truck').textContent = veh.Truck || 0;
+
+            // Update frequency timeline
+            var freqList = document.getElementById('analytics-frequency-list');
+            if (freqList) {
+                freqList.innerHTML = '';
+                var freqs = data.frequency || [];
+                if (freqs.length === 0) {
+                    freqList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding-top: 10px;">No timeline data.</div>';
+                } else {
+                    freqs.forEach(function (item) {
+                        var dateStr = item.date;
+                        var cnt = item.count;
+                        var row = document.createElement('div');
+                        row.style.cssText = 'display:flex;justify-content:space-between;font-size:11px;';
+                        row.innerHTML = '<span>⏱ ' + dateStr + '</span><span style="font-family:var(--font-display);font-weight:600;">' + cnt + '</span>';
+                        freqList.appendChild(row);
+                    });
+                }
+            }
+
+            // Update recurring locations list
+            var locList = document.getElementById('analytics-locations-list');
+            if (locList) {
+                locList.innerHTML = '';
+                var locs = data.recurring_locations || [];
+                if (locs.length === 0) {
+                    locList.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); text-align: center; padding-top: 15px;">No hotspot data.</div>';
+                } else {
+                    locs.forEach(function (loc) {
+                        var latVal = loc.lat;
+                        var lngVal = loc.lng;
+                        var count = loc.count;
+                        
+                        var item = document.createElement('div');
+                        item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;background:rgba(59,158,255,0.04);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-size:11px;cursor:pointer;transition:all 0.15s;';
+                        item.setAttribute('data-lat', latVal);
+                        item.setAttribute('data-lng', lngVal);
+                        
+                        item.innerHTML = '<span>📍 ' + latVal.toFixed(4) + ', ' + lngVal.toFixed(4) + '</span>' +
+                            '<span style="font-family:var(--font-display);background:rgba(59,158,255,0.15);color:var(--accent-bright);padding:2px 6px;border-radius:99px;font-size:10px;font-weight:600;">' + count + ' incidents</span>';
+                        
+                        item.addEventListener('click', function () {
+                            map.flyTo([latVal, lngVal], 14, { animate: true, duration: 1.2 });
+                        });
+                        item.addEventListener('mouseover', function () {
+                            item.style.borderColor = 'var(--border-hard)';
+                            item.style.background = 'var(--accent-bg)';
+                        });
+                        item.addEventListener('mouseout', function () {
+                            item.style.borderColor = 'var(--border)';
+                            item.style.background = 'rgba(59,158,255,0.04)';
+                        });
+                        
+                        locList.appendChild(item);
+                    });
+                }
+            }
+        })
+        .catch(function (err) {
+            console.error('Error fetching analytics:', err);
+        });
 }

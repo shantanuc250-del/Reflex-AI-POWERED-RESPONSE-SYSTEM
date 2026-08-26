@@ -9,8 +9,8 @@ HOSPITALS = [
     {
         "id": "H-01",
         "name": "Emergency Hospital A",
-        "latitude": 28.4749,
-        "longitude": 77.5045,
+        "latitude": 28.5100,
+        "longitude": 77.5450,
         "emergency_capacity": 10,
         "status": "AVAILABLE"
     },

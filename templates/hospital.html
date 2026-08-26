@@ -3,1072 +3,461 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>REFLEX — Hospital Emergency Console</title>
-  <meta name="description" content="Hospital emergency console for real-time incident alerts and patient preparation management." />
-
-  <!-- Fonts -->
+  <title>REFLEX &mdash; Hospital Emergency Console</title>
+  <meta name="description" content="Hospital emergency operations console for real-time incident alerts, patient preparation, and response management." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-
   <style>
-    /* =====================================================
-       DESIGN TOKENS
-       ===================================================== */
     :root {
-      --bg:            #050a10;
-      --bg-mid:        #07101a;
-      --panel:         #0b1522;
-      --panel-raised:  #0e1d30;
-      --panel-glass:   rgba(11, 21, 34, 0.80);
-      --border:        rgba(59, 158, 255, 0.12);
-      --border-hard:   rgba(59, 158, 255, 0.22);
-      --text:          #eaf0f8;
-      --text-sub:      #a8bbd0;
-      --text-muted:    #5a7a9a;
-      --text-dim:      #3a5070;
-      --low:           #22d47a;
-      --low-bg:        rgba(34, 212, 122, 0.08);
-      --low-glow:      rgba(34, 212, 122, 0.25);
-      --medium:        #f59e0b;
-      --medium-bg:     rgba(245, 158, 11, 0.08);
-      --critical:      #ff3d47;
-      --critical-bg:   rgba(255, 61, 71, 0.08);
-      --critical-glow: rgba(255, 61, 71, 0.30);
-      --accent:        #3b9eff;
-      --accent-bright: #5ab8ff;
-      --accent-bg:     rgba(59, 158, 255, 0.10);
-      --accent-glow:   rgba(59, 158, 255, 0.30);
-      --font-display:  'IBM Plex Mono', monospace;
-      --font-body:     'Inter', sans-serif;
-      --header-h:      64px;
-      --radius:        10px;
-      --radius-sm:     6px;
-      --radius-lg:     14px;
-    }
-
-    /* =====================================================
-       RESET + BASE
-       ===================================================== */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font-body);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: rgba(59,158,255,0.2); border-radius: 999px; }
-
-    /* =====================================================
-       HEADER
-       ===================================================== */
-    #console-header {
-      height: var(--header-h);
-      background: var(--panel-glass);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      gap: 24px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    #console-header::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(59,158,255,0.4), transparent);
-    }
-
-    #brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      min-width: 200px;
-    }
-
-    #brand-mark {
-      font-size: 26px;
-      filter: drop-shadow(0 0 10px rgba(59,158,255,0.65));
-      animation: markPulse 3s ease-in-out infinite;
-    }
-
-    @keyframes markPulse {
-      0%,100% { filter: drop-shadow(0 0 8px rgba(59,158,255,0.55)); }
-      50%      { filter: drop-shadow(0 0 20px rgba(59,158,255,0.95)); }
-    }
-
-    #brand-text h1 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 4px;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    #tagline {
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
-
-    #pulse-line {
-      flex: 1;
-      max-width: 340px;
-      height: 36px;
-    }
-
-    #pulse-path {
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: d 0.12s ease;
-    }
-
-    .header-nav {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-left: auto;
-    }
-
-    .nav-link {
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--text-muted);
-      border: 1px solid transparent;
-      transition: all 0.18s ease;
-    }
-
-    .nav-link:hover {
-      color: var(--text);
-      border-color: var(--border-hard);
-      background: var(--accent-bg);
-    }
-
-    .nav-link.active {
-      color: var(--accent-bright);
-      background: var(--accent-bg);
-      border-color: rgba(59,158,255,0.25);
-    }
-
-    #connection-status {
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 5px 13px;
-      border-radius: 999px;
-      border: 1px solid var(--border-hard);
-      color: var(--medium);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.3s ease;
-    }
-
-    #connection-status .live-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    #connection-status.connected {
-      color: var(--low);
-      border-color: rgba(34,212,122,0.35);
-      background: rgba(34,212,122,0.06);
-    }
-
-    #connection-status.connected .live-dot {
-      animation: livePulse 1.8s ease-in-out infinite;
-    }
-
-    #connection-status.disconnected {
-      color: var(--critical);
-      border-color: rgba(255,61,71,0.35);
-      background: rgba(255,61,71,0.06);
-    }
-
-    @keyframes livePulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.35; transform: scale(0.7); }
-    }
-
-    /* =====================================================
-       MAIN CONTENT
-       ===================================================== */
-    #hospital-main {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    /* =====================================================
-       STATUS BAR
-       ===================================================== */
-    #hospital-status-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      position: relative;
-      overflow: hidden;
-    }
-
-    #hospital-status-bar::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), transparent);
-      opacity: 0.5;
-    }
-
-    #hospital-name-display {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    #hospital-online {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--low);
-      padding: 5px 13px;
-      border-radius: 999px;
-      border: 1px solid rgba(34,212,122,0.3);
-      background: var(--low-bg);
-    }
-
-    #hospital-online .live-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--low);
-      animation: livePulse 1.8s ease-in-out infinite;
-    }
-
-    /* =====================================================
-       EMERGENCY ALERT BANNER
-       ===================================================== */
-    #emergency-alert {
-      display: none;
-      margin-bottom: 20px;
-      padding: 18px 20px;
-      background: rgba(255, 61, 71, 0.07);
-      border: 1px solid rgba(255, 61, 71, 0.35);
-      border-left: 4px solid var(--critical);
-      border-radius: var(--radius-lg);
-      animation: alertSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    #emergency-alert.show { display: block; }
-
-    #emergency-alert::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,61,71,0.04) 0%, transparent 60%);
-    }
-
-    /* Pulsing border glow */
-    #emergency-alert.show {
-      animation: alertSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-                 alertGlow 2.5s ease-in-out 0.4s infinite;
-    }
-
-    @keyframes alertSlideIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes alertGlow {
-      0%,100% { box-shadow: 0 0 0 0 rgba(255,61,71,0); border-color: rgba(255,61,71,0.35); }
-      50%      { box-shadow: 0 0 20px rgba(255,61,71,0.2); border-color: rgba(255,61,71,0.6); }
-    }
-
-    #alert-title {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--critical);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: -0.3px;
-    }
-
-    #alert-message {
-      margin-top: 6px;
-      color: var(--text-sub);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    /* =====================================================
-       WAITING SCREEN
-       ===================================================== */
-    #waiting-screen {
-      text-align: center;
-      padding: 80px 20px;
-      background: var(--panel);
-      border: 1px dashed rgba(59,158,255,0.15);
-      border-radius: var(--radius-lg);
-      color: var(--text-muted);
-    }
-
-    #waiting-icon {
-      font-size: 60px;
-      display: block;
-      margin-bottom: 16px;
-      animation: breatheIcon 3.5s ease-in-out infinite;
-      opacity: 0.7;
-    }
-
-    @keyframes breatheIcon {
-      0%,100% { transform: scale(1); opacity: 0.7; }
-      50%      { transform: scale(1.07); opacity: 0.9; }
-    }
-
-    #waiting-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-sub);
-      margin-bottom: 8px;
-    }
-
-    #waiting-text {
-      font-family: var(--font-display);
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-      line-height: 1.7;
-    }
-
-    /* =====================================================
-       CASE HEADER
-       ===================================================== */
-    #case-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-
-    #case-title {
-      font-family: var(--font-display);
-      font-size: 11px;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    #severity-badge {
-      font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 6px 16px;
-      border-radius: 999px;
-      border: 1px solid;
-    }
-
-    #severity-badge.LOW {
-      color: var(--low); background: var(--low-bg);
-      border-color: rgba(34,212,122,0.3);
-    }
-    #severity-badge.MEDIUM {
-      color: var(--medium); background: var(--medium-bg);
-      border-color: rgba(245,158,11,0.3);
-    }
-    #severity-badge.CRITICAL {
-      color: var(--critical); background: var(--critical-bg);
-      border-color: rgba(255,61,71,0.35);
-      animation: badgePulse 2s ease-in-out infinite;
-    }
-
-    @keyframes badgePulse {
-      0%,100% { box-shadow: none; }
-      50%      { box-shadow: 0 0 12px rgba(255,61,71,0.4); }
-    }
-
-    /* =====================================================
-       STATS CARDS
-       ===================================================== */
-    #stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .stat-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.25s ease;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(59,158,255,0.35), transparent);
-    }
-
-    .stat-card:hover { border-color: var(--border-hard); }
-
-    .stat-label {
-      font-family: var(--font-display);
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-
-    .stat-value {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.5px;
-    }
-
-    .stat-value.green  { color: var(--low); }
-    .stat-value.yellow { color: var(--medium); }
-    .stat-value.red    { color: var(--critical); }
-    .stat-value.blue   { color: var(--accent-bright); }
-
-    /* =====================================================
-       CASE GRID (2-col panels)
-       ===================================================== */
-    #case-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .panel:hover { border-color: var(--border-hard); }
-
-    .panel-title {
-      font-family: var(--font-display);
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    .panel-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* Location */
-    #location-value {
-      font-family: var(--font-display);
-      font-size: 15px;
-      color: var(--accent-bright);
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-
-    /* Ambulance */
-    #ambulance-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .detail {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 5px;
-      font-family: var(--font-display);
-      line-height: 1.5;
-    }
-
-    .detail b { color: var(--text-sub); font-weight: 500; }
-
-    .detail-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-family: var(--font-display);
-      font-size: 9px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 999px;
-      border: 1px solid;
-      margin-top: 8px;
-    }
-
-    .detail-pill.ready       { color: var(--text-muted);    border-color: var(--border); }
-    .detail-pill.green       { color: var(--low);           border-color: rgba(34,212,122,0.3);  background: var(--low-bg); }
-    .detail-pill.yellow      { color: var(--medium);        border-color: rgba(245,158,11,0.3);  background: var(--medium-bg); }
-    .detail-pill.red         { color: var(--critical);      border-color: rgba(255,61,71,0.3);   background: var(--critical-bg); }
-
-    /* Hospital Capacity */
-    #capacity-number {
-      font-size: 48px;
-      font-weight: 900;
-      color: var(--low);
-      letter-spacing: -2px;
-      line-height: 1;
-      transition: color 0.3s ease;
-    }
-
-    #capacity-number.medium { color: var(--medium); }
-    #capacity-number.critical { color: var(--critical); }
-
-    #capacity-label {
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 1px;
-      color: var(--text-muted);
-      margin-top: 6px;
-    }
-
-    /* Response control */
-    #response-status {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-      line-height: 1.5;
-    }
-
-    /* Action buttons */
-    #actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .action-button {
-      flex: 1;
-      padding: 12px 10px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: box-shadow 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
-    }
-
-    .action-button::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
-      transform: translateX(-100%);
-      transition: transform 0.45s ease;
-    }
-
-    .action-button:hover::after { transform: translateX(100%); }
-
-    .action-button:hover {
-      transform: translateY(-1px);
-      opacity: 0.92;
-    }
-
-    .action-button:active { transform: translateY(0); opacity: 1; }
-
-    #acknowledge-btn {
-      background: #2563eb;
-      color: #fff;
-      box-shadow: 0 2px 12px rgba(37,99,235,0.25);
-    }
-
-    #acknowledge-btn:hover { box-shadow: 0 4px 20px rgba(37,99,235,0.45); }
-
-    #prepare-btn {
-      background: #16a34a;
-      color: #fff;
-      box-shadow: 0 2px 12px rgba(22,163,74,0.25);
-    }
-
-    #prepare-btn:hover { box-shadow: 0 4px 20px rgba(22,163,74,0.45); }
-
-    /* =====================================================
-       INCIDENT HISTORY
-       ===================================================== */
-    #hospital-feed {
-      margin-top: 24px;
-    }
-
-    .history-section-title {
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .history-section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, var(--border), transparent);
-    }
-
-    #hospital-cases { display: flex; flex-direction: column; gap: 10px; }
-
-    .empty-state {
-      text-align: center;
-      padding: 28px 16px;
-      color: var(--text-muted);
-      font-family: var(--font-display);
-      font-size: 11px;
-      letter-spacing: 0.5px;
-      border: 1px dashed rgba(59,158,255,0.12);
-      border-radius: var(--radius);
-    }
-
-    .history-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      transition: border-color 0.2s ease, transform 0.15s ease;
-      animation: cardEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .history-card:hover {
-      border-color: var(--border-hard);
-      transform: translateX(2px);
-    }
-
-    .history-card.LOW      { border-left-color: var(--low); }
-    .history-card.MEDIUM   { border-left-color: var(--medium); }
-    .history-card.CRITICAL { border-left-color: var(--critical); }
-
-    @keyframes cardEnter {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .history-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .history-badge {
-      font-family: var(--font-display);
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 3px 9px;
-      border-radius: 999px;
-      border: 1px solid;
-    }
-
-    .history-badge.LOW      { color: var(--low);      background: var(--low-bg);      border-color: rgba(34,212,122,0.25); }
-    .history-badge.MEDIUM   { color: var(--medium);   background: var(--medium-bg);   border-color: rgba(245,158,11,0.25); }
-    .history-badge.CRITICAL { color: var(--critical); background: var(--critical-bg); border-color: rgba(255,61,71,0.30); }
-
-    .history-time {
-      font-family: var(--font-display);
-      font-size: 9px;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-    }
-
-    .history-detail {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 4px;
-      line-height: 1.5;
-      font-family: var(--font-display);
-    }
-
-    /* =====================================================
-       STATUS TIMELINE
-       ===================================================== */
-    #status-timeline {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      padding: 14px 24px;
-      background: var(--panel-raised);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      font-family: var(--font-display);
-      font-size: 10px;
-      letter-spacing: 1.5px;
-    }
-
-    .timeline-step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text-dim);
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
-
-    .timeline-step.active {
-      color: var(--accent-bright);
-      font-weight: 600;
-    }
-
-    .timeline-step.completed {
-      color: var(--low);
-      font-weight: 600;
-    }
-
-    .step-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: currentColor;
-      transition: box-shadow 0.3s ease;
-    }
-
-    .timeline-step.active .step-dot {
-      box-shadow: 0 0 10px var(--accent);
-    }
-
-    .timeline-step.completed .step-dot {
-      box-shadow: 0 0 10px var(--low);
-    }
-
-    .timeline-line {
-      flex: 1;
-      height: 2px;
-      background: var(--border);
-      margin: 0 16px;
-      transition: background 0.3s ease;
-    }
-
-    .timeline-line.active {
-      background: var(--accent);
-    }
-
-    .timeline-line.completed {
-      background: var(--low);
-    }
-
-    /* =====================================================
-       EVIDENCE IMAGE PANEL
-       ===================================================== */
-    #evidence-img-container {
-      background: #020608;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      max-height: 380px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      margin-top: 6px;
-    }
-
-    #case-evidence-img {
-      display: block;
-      width: 100%;
-      max-height: 360px;
-      object-fit: contain;
-      transition: opacity 0.3s ease;
-    }
-
-    #case-incident-id {
-      font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      color: var(--accent-bright);
-      margin-top: 4px;
-    }
-
-    /* Acknowledge button overrides */
-    #acknowledge-btn {
-      background: #2563eb;
-      color: #fff;
-      font-weight: 700;
-      letter-spacing: 2px;
-      box-shadow: 0 2px 14px rgba(37,99,235,0.3);
-    }
-
-    #acknowledge-btn:hover {
-      background: #3b82f6;
-      box-shadow: 0 4px 22px rgba(37,99,235,0.5);
-    }
-
-    #acknowledge-btn.acknowledged {
-      background: var(--low-bg) !important;
-      color: var(--low) !important;
-      border: 1px solid rgba(34,212,122,0.4) !important;
-      box-shadow: none !important;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    /* =====================================================
-       RESPONSIVE
-       ===================================================== */
-    @media (max-width: 900px) {
-      #stats     { grid-template-columns: repeat(2, 1fr); }
-      #case-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 600px) {
-      #console-header { padding: 0 14px; }
-      #pulse-line { display: none; }
-      #hospital-main { padding: 14px; }
-      #actions { flex-direction: column; }
-      #stats { grid-template-columns: 1fr; }
-    }
-
-    /* =====================================================
-       ANIMATIONS
-       ===================================================== */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
+      --bg:#040910; --bg-mid:#060e18; --panel:#0a1420; --panel-raised:#0d1b2e;
+      --panel-glass:rgba(10,20,32,0.85); --border:rgba(59,158,255,0.11);
+      --border-hard:rgba(59,158,255,0.22); --text:#eaf0f8; --text-sub:#a8bbd0;
+      --text-muted:#5a7a9a; --text-dim:#3a5070; --low:#22d47a;
+      --low-bg:rgba(34,212,122,0.08); --medium:#f59e0b; --medium-bg:rgba(245,158,11,0.08);
+      --critical:#ff3d47; --critical-bg:rgba(255,61,71,0.08);
+      --critical-glow:rgba(255,61,71,0.30); --accent:#3b9eff;
+      --accent-bright:#5ab8ff; --accent-bg:rgba(59,158,255,0.10);
+      --accent-glow:rgba(59,158,255,0.30); --font-display:'IBM Plex Mono',monospace;
+      --font-body:'Inter',sans-serif; --header-h:60px; --statusbar-h:44px;
+      --radius:10px; --radius-sm:6px; --radius-lg:14px; --radius-xl:18px;
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(59,158,255,0.05) 0%,transparent 70%); }
+    ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:rgba(59,158,255,0.2);border-radius:999px}
+
+    /* HEADER */
+    #console-header{height:var(--header-h);background:var(--panel-glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:20px;position:sticky;top:0;z-index:200}
+    #console-header::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,158,255,0.45),transparent)}
+    #brand{display:flex;align-items:center;gap:11px;text-decoration:none;flex-shrink:0}
+    #brand-mark{font-size:24px;filter:drop-shadow(0 0 10px rgba(59,158,255,0.7));animation:markPulse 3s ease-in-out infinite}
+    @keyframes markPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(59,158,255,0.55))}50%{filter:drop-shadow(0 0 22px rgba(59,158,255,1))}}
+    #brand-text h1{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:4px;color:var(--text);line-height:1}
+    #tagline{font-family:var(--font-display);font-size:9px;letter-spacing:2px;color:var(--text-muted);margin-top:3px;text-transform:uppercase}
+    #pulse-line{flex:1;max-width:300px;height:34px}
+    #pulse-path{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:d 0.12s ease}
+    .header-nav{display:flex;align-items:center;gap:4px;margin-left:auto}
+    .nav-link{font-family:var(--font-display);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 13px;border-radius:var(--radius-sm);text-decoration:none;color:var(--text-muted);border:1px solid transparent;transition:all 0.18s ease}
+    .nav-link:hover{color:var(--text);border-color:var(--border-hard);background:var(--accent-bg)}
+    .nav-link.active{color:var(--accent-bright);background:var(--accent-bg);border-color:rgba(59,158,255,0.25)}
+    #connection-status{font-family:var(--font-display);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:999px;border:1px solid var(--border-hard);color:var(--medium);white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all 0.3s ease;flex-shrink:0}
+    #connection-status .live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+    #connection-status.connected{color:var(--low);border-color:rgba(34,212,122,0.35);background:rgba(34,212,122,0.06)}
+    #connection-status.connected .live-dot{animation:livePulse 1.8s ease-in-out infinite}
+    #connection-status.disconnected{color:var(--critical);border-color:rgba(255,61,71,0.35);background:rgba(255,61,71,0.06)}
+    @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.65)}}
+
+    /* COMPACT STATUS BAR */
+    #hospital-status-bar{height:var(--statusbar-h);background:var(--panel-raised);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:0;position:sticky;top:var(--header-h);z-index:190}
+    #hospital-name-display{font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:1.5px;color:var(--text);display:flex;align-items:center;gap:8px;padding-right:20px;border-right:1px solid var(--border);margin-right:20px;flex-shrink:0}
+    #hospital-online{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--low);padding:3px 10px;border-radius:999px;border:1px solid rgba(34,212,122,0.3);background:var(--low-bg);flex-shrink:0}
+    #hospital-online .live-dot{width:5px;height:5px;border-radius:50%;background:var(--low);animation:livePulse 1.8s ease-in-out infinite}
+    .status-bar-divider{width:1px;height:22px;background:var(--border);margin:0 20px;flex-shrink:0}
+    .status-bar-metric{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+    .sb-label{font-family:var(--font-display);font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim)}
+    .sb-value{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--text);line-height:1}
+    .sb-value.green{color:var(--low)} .sb-value.yellow{color:var(--medium)} .sb-value.red{color:var(--critical)} .sb-value.blue{color:var(--accent-bright)}
+
+    /* MAIN */
+    #hospital-main{max-width:1440px;margin:0 auto;padding:20px 24px 40px}
+
+    /* ALERT BANNER */
+    #emergency-alert{display:none;margin-bottom:16px;padding:14px 20px;background:rgba(255,61,71,0.06);border:1px solid rgba(255,61,71,0.30);border-left:4px solid var(--critical);border-radius:var(--radius-lg);position:relative;overflow:hidden}
+    #emergency-alert.show{display:flex;align-items:center;gap:16px;animation:alertSlideIn 0.4s cubic-bezier(0.22,1,0.36,1),alertGlow 2.5s ease-in-out 0.4s infinite}
+    #emergency-alert::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,61,71,0.06) 0%,transparent 50%);pointer-events:none}
+    .alert-icon{font-size:28px;flex-shrink:0;animation:alertIconPulse 1.2s ease-in-out infinite}
+    @keyframes alertIconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    .alert-content{flex:1}
+    #alert-title{font-size:15px;font-weight:800;color:var(--critical);letter-spacing:-0.3px}
+    #alert-message{margin-top:3px;color:var(--text-sub);font-size:12px;line-height:1.5}
+    @keyframes alertSlideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes alertGlow{0%,100%{box-shadow:none;border-color:rgba(255,61,71,0.30)}50%{box-shadow:0 0 24px rgba(255,61,71,0.15);border-color:rgba(255,61,71,0.55)}}
+
+    /* WAITING */
+    #waiting-screen{text-align:center;padding:90px 20px;background:var(--panel);border:1px dashed rgba(59,158,255,0.13);border-radius:var(--radius-xl);color:var(--text-muted);position:relative;overflow:hidden}
+    #waiting-screen::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;border:1px solid rgba(59,158,255,0.06);animation:radarPulse 3s ease-in-out infinite}
+    @keyframes radarPulse{0%,100%{transform:translate(-50%,-50%) scale(0.8);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.1);opacity:0}}
+    #waiting-icon{font-size:52px;display:block;margin-bottom:16px;animation:breatheIcon 3.5s ease-in-out infinite;position:relative}
+    @keyframes breatheIcon{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.05);opacity:0.95}}
+    #waiting-title{font-size:17px;font-weight:700;color:var(--text-sub);margin-bottom:8px}
+    #waiting-text{font-family:var(--font-display);font-size:11px;letter-spacing:0.3px;color:var(--text-muted);line-height:1.8}
+
+    /* TIMELINE */
+    #status-timeline{display:flex;align-items:center;margin-bottom:16px;padding:12px 20px;background:var(--panel-raised);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-display);gap:0;position:relative;overflow:hidden}
+    #status-timeline::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(59,158,255,0.25),transparent)}
+    .timeline-step{display:flex;align-items:center;gap:8px;color:var(--text-dim);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:500;transition:color 0.3s ease;flex-shrink:0}
+    .timeline-step.active{color:var(--accent-bright);font-weight:700}
+    .timeline-step.completed{color:var(--low);font-weight:700}
+    .step-node{width:28px;height:28px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.3s ease;background:transparent}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:currentColor;transition:all 0.3s ease}
+    .timeline-step.active .step-node{border-color:var(--accent-bright);background:var(--accent-bg);box-shadow:0 0 12px var(--accent-glow)}
+    .timeline-step.active .step-node .step-dot{background:var(--accent-bright);box-shadow:0 0 6px var(--accent)}
+    .timeline-step.completed .step-node{border-color:var(--low);background:var(--low-bg)}
+    .timeline-step.completed .step-node .step-dot{background:var(--low)}
+    .step-info{display:flex;flex-direction:column;gap:1px}
+    .step-name{font-size:9px;letter-spacing:2px}
+    .step-time{font-size:7px;letter-spacing:1px;color:var(--text-dim);opacity:0;transition:opacity 0.3s}
+    .timeline-step.completed .step-time,.timeline-step.active .step-time{opacity:1}
+    .timeline-line{flex:1;height:2px;background:var(--border);margin:0 12px;border-radius:1px;transition:background 0.4s ease;position:relative;overflow:hidden}
+    .timeline-line.active{background:linear-gradient(90deg,var(--low),var(--accent))}
+    .timeline-line.completed{background:var(--low)}
+    .timeline-line::after{content:'';position:absolute;top:0;left:-100%;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)}
+    .timeline-line.active::after{animation:lineShimmer 1.5s ease-in-out infinite}
+    @keyframes lineShimmer{0%{left:-100%}100%{left:100%}}
+
+    /* HERO CARD */
+    #active-case{display:none}
+    #incident-hero{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-xl);margin-bottom:14px;position:relative;overflow:hidden}
+    #incident-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:0;transition:opacity 0.5s ease}
+    #incident-hero.severity-CRITICAL::before{opacity:1;background:linear-gradient(90deg,var(--critical),#ff6b35)}
+    #incident-hero.severity-MEDIUM::before{opacity:1;background:linear-gradient(90deg,var(--medium),#fbbf24)}
+    #incident-hero.severity-LOW::before{opacity:1;background:linear-gradient(90deg,var(--low),#34d399)}
+    .hero-top{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;padding:20px 24px 16px;border-bottom:1px solid var(--border)}
+    .severity-block{display:flex;flex-direction:column;align-items:center;justify-content:center;width:76px;height:76px;border-radius:var(--radius);border:2px solid;position:relative;flex-shrink:0}
+    .severity-block.CRITICAL{background:var(--critical-bg);border-color:rgba(255,61,71,0.45);animation:criticalPulse 2s ease-in-out infinite}
+    .severity-block.MEDIUM{background:var(--medium-bg);border-color:rgba(245,158,11,0.45)}
+    .severity-block.LOW{background:var(--low-bg);border-color:rgba(34,212,122,0.45)}
+    @keyframes criticalPulse{0%,100%{box-shadow:0 0 16px rgba(255,61,71,0.12)}50%{box-shadow:0 0 32px rgba(255,61,71,0.35)}}
+    .severity-icon{font-size:22px}
+    .severity-label-text{font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;margin-top:3px}
+    .severity-block.CRITICAL .severity-label-text{color:var(--critical)}
+    .severity-block.MEDIUM .severity-label-text{color:var(--medium)}
+    .severity-block.LOW .severity-label-text{color:var(--low)}
+    .hero-info{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .hero-label{font-family:var(--font-display);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+    #case-incident-id{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--accent-bright);letter-spacing:1.5px;line-height:1}
+    .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
+    .hero-chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:var(--text-muted);background:var(--panel-raised);border:1px solid var(--border);padding:3px 9px;border-radius:999px;white-space:nowrap}
+    .hero-chip .chip-val{color:var(--text-sub);font-weight:600}
+    #ack-cta{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+    #severity-badge{font-family:var(--font-display);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;border-radius:999px;border:1px solid}
+    #severity-badge.LOW{color:var(--low);background:var(--low-bg);border-color:rgba(34,212,122,0.3)}
+    #severity-badge.MEDIUM{color:var(--medium);background:var(--medium-bg);border-color:rgba(245,158,11,0.3)}
+    #severity-badge.CRITICAL{color:var(--critical);background:var(--critical-bg);border-color:rgba(255,61,71,0.35);animation:badgePulse 2s ease-in-out infinite}
+    @keyframes badgePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 14px rgba(255,61,71,0.45)}}
+    #acknowledge-btn{padding:11px 22px;background:#2563eb;color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:all 0.2s ease;box-shadow:0 2px 16px rgba(37,99,235,0.30);white-space:nowrap}
+    #acknowledge-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.15) 50%,transparent 60%);transform:translateX(-100%);transition:transform 0.45s ease}
+    #acknowledge-btn:hover::after{transform:translateX(100%)}
+    #acknowledge-btn:hover{background:#3b82f6;box-shadow:0 4px 24px rgba(37,99,235,0.5);transform:translateY(-1px)}
+    #acknowledge-btn:active{transform:translateY(0)}
+    #acknowledge-btn.acknowledged{background:var(--low-bg)!important;color:var(--low)!important;border:1px solid rgba(34,212,122,0.4)!important;box-shadow:none!important;cursor:not-allowed;transform:none!important}
+    .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+    .hero-stat{padding:14px 20px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:4px;transition:background 0.2s ease}
+    .hero-stat:last-child{border-right:none}
+    .hero-stat:hover{background:rgba(59,158,255,0.03)}
+    .hs-label{font-family:var(--font-display);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted)}
+    .hs-value{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1}
+    .hs-value.green{color:var(--low)} .hs-value.yellow{color:var(--medium)} .hs-value.red{color:var(--critical)} .hs-value.blue{color:var(--accent-bright)}
+
+    /* RESPONSE GRID */
+    #response-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+    .response-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;position:relative;overflow:hidden;transition:border-color 0.25s ease}
+    .response-panel:hover{border-color:var(--border-hard)}
+    .response-panel::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:3px 0 0 3px}
+    .response-panel.ambulance::before{background:linear-gradient(180deg,var(--low),rgba(34,212,122,0.3))}
+    .response-panel.hospital-cap::before{background:linear-gradient(180deg,var(--accent),rgba(59,158,255,0.3))}
+    .response-panel.location::before{background:linear-gradient(180deg,var(--medium),rgba(245,158,11,0.3))}
+    .response-panel.actions::before{background:linear-gradient(180deg,#8b5cf6,rgba(139,92,246,0.3))}
+    .rp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .rp-title{font-family:var(--font-display);font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:7px}
+    .rp-status-pill{font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid;display:flex;align-items:center;gap:5px}
+    .rp-status-pill.green{color:var(--low);border-color:rgba(34,212,122,0.3);background:var(--low-bg)}
+    .rp-status-pill.yellow{color:var(--medium);border-color:rgba(245,158,11,0.3);background:var(--medium-bg)}
+    .rp-status-pill.red{color:var(--critical);border-color:rgba(255,61,71,0.3);background:var(--critical-bg)}
+    .rp-status-pill.blue{color:var(--accent-bright);border-color:rgba(59,158,255,0.3);background:var(--accent-bg)}
+    .rp-status-pill .dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:livePulse 1.8s ease-in-out infinite}
+    #ambulance-name{font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.2}
+    .eta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .eta-label{font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
+    .eta-value{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--medium)}
+    .eta-track{height:3px;background:var(--panel-raised);border-radius:2px;overflow:hidden;margin-bottom:10px}
+    .eta-fill{height:100%;width:65%;border-radius:2px;background:linear-gradient(90deg,var(--low),var(--medium));animation:etaPulse 2s ease-in-out infinite}
+    @keyframes etaPulse{0%,100%{opacity:1}50%{opacity:0.6}}
+    .detail{font-size:11px;color:var(--text-muted);margin-top:4px;font-family:var(--font-display);line-height:1.6}
+    .detail b{color:var(--text-sub);font-weight:600}
+    #location-value{font-family:var(--font-display);font-size:14px;color:var(--accent-bright);letter-spacing:0.5px;margin-bottom:8px}
+    #capacity-number{font-size:44px;font-weight:900;color:var(--low);letter-spacing:-2px;line-height:1;transition:color 0.3s ease}
+    #capacity-number.medium{color:var(--medium)} #capacity-number.critical{color:var(--critical)}
+    #capacity-label{font-family:var(--font-display);font-size:9px;letter-spacing:1px;color:var(--text-muted);margin-top:5px}
+    #response-status{font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6}
+    #actions{display:flex;flex-direction:column;gap:8px}
+    .action-button{width:100%;padding:11px 12px;border:none;border-radius:var(--radius-sm);font-family:var(--font-display);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:all 0.2s ease}
+    .action-button::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%);transform:translateX(-100%);transition:transform 0.45s ease}
+    .action-button:hover::after{transform:translateX(100%)}
+    .action-button:hover{transform:translateY(-1px)}
+    .action-button:active{transform:translateY(0)}
+    #prepare-btn{background:#16a34a;color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.25)}
+    #prepare-btn:hover{box-shadow:0 4px 20px rgba(22,163,74,0.45)}
+
+    /* EVIDENCE */
+    #evidence-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0;overflow:hidden;margin-bottom:14px}
+    .evidence-header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .evidence-title{font-family:var(--font-display);font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+    #evidence-img-container{background:#020508;position:relative;display:flex;align-items:stretch;min-height:180px}
+    #case-evidence-img{display:block;width:100%;object-fit:contain;max-height:360px}
+    .evidence-phase-labels{position:absolute;bottom:0;left:0;right:0;display:grid;grid-template-columns:1fr 1fr 1fr;pointer-events:none}
+    .phase-label{text-align:center;padding:5px 8px;font-family:var(--font-display);font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+    .phase-label.before{background:rgba(34,212,122,0.85);color:#000}
+    .phase-label.impact{background:rgba(245,158,11,0.9);color:#000}
+    .phase-label.after{background:rgba(255,61,71,0.85);color:#fff}
+    #case-no-evidence{width:100%;padding:50px 20px;text-align:center;color:var(--text-muted);font-family:var(--font-display);font-size:11px;letter-spacing:0.5px}
+
+    /* HISTORY */
+    #hospital-feed{margin-top:20px}
+    .history-section-title{font-family:var(--font-display);font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;display:flex;align-items:center;gap:12px}
+    .history-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    #hospital-cases{display:flex;flex-direction:column;gap:8px}
+    .empty-state{text-align:center;padding:24px 16px;color:var(--text-muted);font-family:var(--font-display);font-size:10px;letter-spacing:0.5px;border:1px dashed rgba(59,158,255,0.10);border-radius:var(--radius)}
+    .history-card{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:12px 16px;transition:all 0.2s ease;animation:cardEnter 0.3s cubic-bezier(0.22,1,0.36,1)}
+    .history-card:hover{border-color:var(--border-hard);transform:translateX(2px)}
+    .history-card.LOW{border-left-color:var(--low)} .history-card.MEDIUM{border-left-color:var(--medium)} .history-card.CRITICAL{border-left-color:var(--critical)}
+    @keyframes cardEnter{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+    .history-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .history-badge{font-family:var(--font-display);font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid}
+    .history-badge.LOW{color:var(--low);background:var(--low-bg);border-color:rgba(34,212,122,0.25)}
+    .history-badge.MEDIUM{color:var(--medium);background:var(--medium-bg);border-color:rgba(245,158,11,0.25)}
+    .history-badge.CRITICAL{color:var(--critical);background:var(--critical-bg);border-color:rgba(255,61,71,0.30)}
+    .history-time{font-family:var(--font-display);font-size:8px;letter-spacing:1px;color:var(--text-dim)}
+    .history-detail{font-size:11px;color:var(--text-muted);margin-top:3px;line-height:1.5;font-family:var(--font-display)}
+
+    /* JS compat -- keep old IDs hidden */
+    #case-header,#case-title,#stats,#case-grid{display:none!important}
+
+    /* RESPONSIVE */
+    @media(max-width:960px){
+      #response-grid { grid-template-columns:1fr; }
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .hero-top { grid-template-columns:auto 1fr; }
+      #ack-cta { display:none; }
+    }
+    @media(max-width:640px){
+      #console-header { padding:0 14px; }
+      #pulse-line { display:none; }
+      #hospital-main { padding:12px; }
+      #hospital-status-bar { padding:0 14px; }
+      .status-bar-divider { display:none; }
+      .hero-stats { grid-template-columns:1fr 1fr; }
+    }
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important}}
   </style>
 </head>
-
 <body>
 
-<!-- =====================================================
-     HEADER
-     ===================================================== -->
 <header id="console-header">
-
   <a id="brand" href="/">
-    <span id="brand-mark">⚡</span>
+    <span id="brand-mark">&#9889;</span>
     <div id="brand-text">
       <h1>REFLEX</h1>
       <div id="tagline">Hospital Emergency Console</div>
     </div>
   </a>
-
   <svg id="pulse-line" viewBox="0 0 300 36" preserveAspectRatio="none">
     <path id="pulse-path" d="M0,18 L300,18" />
   </svg>
-
   <nav class="header-nav">
     <a href="/" class="nav-link">Home</a>
     <a href="/dashboard" class="nav-link">Console</a>
     <a href="/hospital" class="nav-link active">Hospital</a>
   </nav>
-
   <div id="connection-status">
     <span class="live-dot"></span>
     Connecting...
   </div>
-
 </header>
 
+<div id="hospital-status-bar">
+  <div id="hospital-name-display">
+    &#127973; <span id="hospital-name">Emergency Hospital A</span>
+  </div>
+  <div id="hospital-online">
+    <span class="live-dot"></span>
+    SYSTEM ONLINE
+  </div>
+  <div class="status-bar-divider"></div>
+  <div class="status-bar-metric">
+    <span class="sb-label">Active Cases</span>
+    <span class="sb-value blue" id="sb-active-cases">0</span>
+  </div>
+  <div class="status-bar-divider"></div>
+  <div class="status-bar-metric">
+    <span class="sb-label">Critical</span>
+    <span class="sb-value red" id="sb-critical-cases">0</span>
+  </div>
+  <div class="status-bar-divider"></div>
+  <div class="status-bar-metric">
+    <span class="sb-label">Incoming</span>
+    <span class="sb-value yellow" id="sb-incoming-cases">0</span>
+  </div>
+  <div class="status-bar-divider"></div>
+  <div class="status-bar-metric">
+    <span class="sb-label">Emergency Capacity</span>
+    <span class="sb-value green" id="sb-capacity">&#8212;</span>
+  </div>
+</div>
 
-<!-- =====================================================
-     MAIN
-     ===================================================== -->
 <main id="hospital-main">
 
-  <!-- Hospital Status Bar -->
-  <div id="hospital-status-bar">
-    <div id="hospital-name-display">
-      🏥 Emergency Hospital A
-    </div>
-    <div id="hospital-online">
-      <span class="live-dot"></span>
-      SYSTEM ONLINE
-    </div>
-  </div>
-
-  <!-- Emergency Alert Banner -->
   <div id="emergency-alert">
-    <div id="alert-title">🚨 NEW PATIENT INCOMING</div>
-    <div id="alert-message">Emergency incident detected. Prepare the emergency team.</div>
+    <span class="alert-icon">&#128680;</span>
+    <div class="alert-content">
+      <div id="alert-title">NEW PATIENT INCOMING</div>
+      <div id="alert-message">Emergency incident detected. Prepare the emergency team.</div>
+    </div>
   </div>
 
-  <!-- Waiting Screen -->
   <div id="waiting-screen">
-    <span id="waiting-icon">🏥</span>
-    <div id="waiting-title">Waiting for incoming emergency</div>
+    <span id="waiting-icon">&#127973;</span>
+    <div id="waiting-title">Awaiting incoming emergency</div>
     <div id="waiting-text">
       REFLEX will automatically alert this hospital<br>when an accident is detected nearby.
     </div>
   </div>
 
-  <!-- Active Case -->
-  <div id="active-case" style="display:none;">
+  <div id="active-case">
 
-    <!-- Status Timeline -->
     <div id="status-timeline">
       <div class="timeline-step" id="step-detected">
-        <span class="step-dot"></span>
-        DETECTED
+        <div class="step-node"><span class="step-dot"></span></div>
+        <div class="step-info">
+          <span class="step-name">Detected</span>
+          <span class="step-time" id="step-detected-time">&#8212;</span>
+        </div>
       </div>
       <div class="timeline-line" id="line-1"></div>
       <div class="timeline-step" id="step-notified">
-        <span class="step-dot"></span>
-        NOTIFIED
+        <div class="step-node"><span class="step-dot"></span></div>
+        <div class="step-info">
+          <span class="step-name">Notified</span>
+          <span class="step-time" id="step-notified-time">&#8212;</span>
+        </div>
       </div>
       <div class="timeline-line" id="line-2"></div>
       <div class="timeline-step" id="step-acknowledged">
-        <span class="step-dot"></span>
-        ACKNOWLEDGED
-      </div>
-    </div>
-
-    <div id="case-header">
-      <div style="display:flex; flex-direction:column; gap:2px;">
-        <div id="case-title">Active Emergency Case</div>
-        <div id="case-incident-id">—</div>
-      </div>
-      <div id="severity-badge" class="MEDIUM">MEDIUM</div>
-    </div>
-
-    <!-- Stats -->
-    <div id="stats">
-      <div class="stat-card">
-        <div class="stat-label">Incident Status</div>
-        <div class="stat-value green" id="incident-status">INCOMING</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">AI Confidence</div>
-        <div class="stat-value blue" id="confidence">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Vehicles Involved</div>
-        <div class="stat-value" id="vehicles">—</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Severity Score</div>
-        <div class="stat-value yellow" id="severity-score">—</div>
-      </div>
-    </div>
-
-    <!-- Case Grid -->
-    <div id="case-grid">
-
-      <!-- Location -->
-      <div class="panel">
-        <div class="panel-title">📍 Accident Location</div>
-        <div id="location-value">—</div>
-        <div class="detail" id="event-time">Event time: —</div>
-        <div class="detail" id="reason">Reason: —</div>
-        <div class="detail" id="case-timestamp">Timestamp: —</div>
-      </div>
-
-      <!-- Ambulance -->
-      <div class="panel">
-        <div class="panel-title">🚑 Ambulance</div>
-        <div id="ambulance-name">—</div>
-        <div class="detail" id="ambulance-status">Status: —</div>
-        <div class="detail" id="ambulance-distance">Distance: —</div>
-        <div class="detail" id="ambulance-eta">ETA: —</div>
-      </div>
-
-      <!-- Hospital Capacity -->
-      <div class="panel">
-        <div class="panel-title">🏥 Hospital Capacity</div>
-        <div id="capacity-number">—</div>
-        <div id="capacity-label">Emergency capacity available</div>
-        <div class="detail" id="hospital-status">Status: READY</div>
-      </div>
-
-      <!-- Response Control -->
-      <div class="panel">
-        <div class="panel-title">⚡ Response Control</div>
-        <div id="response-status">Awaiting hospital acknowledgement.</div>
-        <div id="actions">
-          <button class="action-button" id="acknowledge-btn">ACKNOWLEDGE CASE</button>
-          <button class="action-button" id="prepare-btn">🏥 Prepare Team</button>
+        <div class="step-node"><span class="step-dot"></span></div>
+        <div class="step-info">
+          <span class="step-name">Acknowledged</span>
+          <span class="step-time" id="step-acknowledged-time">&#8212;</span>
         </div>
       </div>
+    </div>
 
-      <!-- Available Evidence (Full Width) -->
-      <div class="panel" id="evidence-panel" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
-        <div class="panel-title">📷 Available Evidence</div>
-        <div id="evidence-img-container">
-          <img id="case-evidence-img" src="" alt="Incident Evidence Frame" style="display: none;" />
-          <div id="case-no-evidence" style="padding: 40px; text-align: center; color: var(--text-muted); font-family: var(--font-display); font-size: 11px;">
-            No evidence frame captured for this incident.
+    <div id="incident-hero">
+      <div class="hero-top">
+        <div class="severity-block" id="severity-block">
+          <span class="severity-icon" id="severity-icon">&#9888;&#65039;</span>
+          <span class="severity-label-text" id="severity-label-text">&#8212;</span>
+        </div>
+        <div class="hero-info">
+          <span class="hero-label">Active Emergency Case</span>
+          <div id="case-incident-id">&#8212;</div>
+          <div class="hero-meta">
+            <span class="hero-chip">&#128336; <span class="chip-val" id="hero-timestamp">&#8212;</span></span>
+            <span class="hero-chip">&#128205; <span class="chip-val" id="hero-location">&#8212;</span></span>
+            <span class="hero-chip">&#128270; <span class="chip-val" id="hero-reason">&#8212;</span></span>
           </div>
         </div>
+        <div id="ack-cta">
+          <div id="severity-badge" class="MEDIUM">MEDIUM</div>
+          <button id="acknowledge-btn">&#10003; Acknowledge Case</button>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hs-label">Incident Status</span>
+          <span class="hs-value green" id="incident-status">INCOMING</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hs-label">AI Confidence</span>
+          <span class="hs-value blue" id="confidence">&#8212;</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hs-label">Vehicles Involved</span>
+          <span class="hs-value" id="vehicles">&#8212;</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hs-label">Severity Score</span>
+          <span class="hs-value yellow" id="severity-score">&#8212;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preserved hidden IDs for hospital.js compatibility -->
+    <div id="case-header" style="display:none;"><div id="case-title"></div></div>
+    <div id="stats" style="display:none;"></div>
+    <div id="case-grid" style="display:none;">
+      <div id="ambulance-status"></div>
+      <div id="hospital-status"></div>
+    </div>
+
+    <div id="response-grid">
+      <div class="response-panel ambulance">
+        <div class="rp-header">
+          <span class="rp-title">&#128657; Ambulance Response</span>
+          <span class="rp-status-pill green" id="amb-status-pill">
+            <span class="dot"></span> Dispatched
+          </span>
+        </div>
+        <div id="ambulance-name">&#8212;</div>
+        <div class="eta-row">
+          <span class="eta-label">ETA</span>
+          <span class="eta-value" id="amb-eta-display">&#8212; min</span>
+        </div>
+        <div class="eta-track"><div class="eta-fill" id="amb-eta-fill"></div></div>
+        <div class="detail">Distance: <b id="amb-distance-display">&#8212;</b></div>
+        <div id="ambulance-eta" style="display:none;"></div>
+        <div id="ambulance-distance" style="display:none;"></div>
       </div>
 
-    </div><!-- /case-grid -->
+      <div class="response-panel hospital-cap">
+        <div class="rp-header">
+          <span class="rp-title">&#127973; Hospital Readiness</span>
+          <span class="rp-status-pill blue" id="hosp-status-pill">
+            <span class="dot"></span> Ready
+          </span>
+        </div>
+        <div id="capacity-number">&#8212;</div>
+        <div id="capacity-label">Emergency beds available</div>
+        <div class="detail" style="margin-top:8px;">Status: <b style="color:var(--low)">Operational</b></div>
+      </div>
+
+      <div class="response-panel location">
+        <div class="rp-header">
+          <span class="rp-title">&#128205; Incident Location</span>
+        </div>
+        <div id="location-value">&#8212;</div>
+        <div class="detail" id="event-time" style="margin-top:6px;">Event time: &#8212;</div>
+        <div class="detail" id="reason" style="margin-top:4px;">Reason: &#8212;</div>
+        <div class="detail" id="case-timestamp" style="margin-top:4px;">Timestamp: &#8212;</div>
+      </div>
+
+      <div class="response-panel actions">
+        <div class="rp-header">
+          <span class="rp-title">&#9889; Response Control</span>
+        </div>
+        <div id="response-status">Awaiting hospital acknowledgement.</div>
+        <div id="actions">
+          <button id="prepare-btn" class="action-button">&#127973; Prepare Emergency Team</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="evidence-panel">
+      <div class="evidence-header">
+        <span class="evidence-title">&#128247; Incident Evidence &mdash; Before, Impact &amp; After</span>
+        <span style="font-family:var(--font-display);font-size:8px;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;">AI-captured frames</span>
+      </div>
+      <div id="evidence-img-container">
+        <img id="case-evidence-img" src="" alt="Incident Evidence Frame" style="display:none;" />
+        <div class="evidence-phase-labels" id="evidence-phase-labels" style="display:none;">
+          <span class="phase-label before">&#9654; Before</span>
+          <span class="phase-label impact">&#9889; Impact</span>
+          <span class="phase-label after">&#9664; After</span>
+        </div>
+        <div id="case-no-evidence">&#128247; No evidence frame captured for this incident.</div>
+      </div>
+    </div>
+
   </div><!-- /active-case -->
 
-
-  <!-- Incident History -->
   <section id="hospital-feed">
     <div class="history-section-title">Incident History</div>
     <div id="hospital-cases">
@@ -1078,12 +467,83 @@
 
 </main>
 
-
-<!-- =====================================================
-     SCRIPTS
-     ===================================================== -->
 <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
 <script src="{{ url_for('static', filename='js/hospital.js') }}"></script>
+<script>
+(function(){
+  var _int=setInterval(function(){
+    if(typeof updateTimelineStatus==='undefined') return;
+    clearInterval(_int);
 
+    function mirrorEl(srcId,dstId,transform){
+      var src=document.getElementById(srcId),dst=document.getElementById(dstId);
+      if(!src||!dst) return;
+      new MutationObserver(function(){
+        dst.textContent=transform?transform(src.textContent):src.textContent;
+      }).observe(src,{childList:true,characterData:true,subtree:true});
+    }
+
+    mirrorEl('ambulance-eta','amb-eta-display',function(t){return t.replace('ETA: ','');});
+    mirrorEl('ambulance-distance','amb-distance-display',function(t){return t.replace('Distance: ','');});
+    mirrorEl('case-timestamp','hero-timestamp',function(t){return t.replace('Timestamp: ','');});
+    mirrorEl('location-value','hero-location',null);
+    mirrorEl('reason','hero-reason',function(t){return t.replace('Reason: ','');});
+    mirrorEl('capacity-number','sb-capacity',null);
+
+    var badge=document.getElementById('severity-badge');
+    if(badge){
+      new MutationObserver(function(){
+        var sev=badge.textContent.trim();
+        var block=document.getElementById('severity-block');
+        var lbl=document.getElementById('severity-label-text');
+        var icon=document.getElementById('severity-icon');
+        var hero=document.getElementById('incident-hero');
+        if(block) block.className='severity-block '+sev;
+        if(lbl) lbl.textContent=sev;
+        if(icon) icon.textContent=sev==='CRITICAL'?'\uD83D\uDD34':sev==='MEDIUM'?'\uD83D\uDFE0':'\uD83D\uDFE2';
+        if(hero) hero.className='severity-'+sev;
+        var sbC=document.getElementById('sb-critical-cases');
+        if(sbC&&sev==='CRITICAL') sbC.textContent='1';
+      }).observe(badge,{childList:true,characterData:true,subtree:true});
+    }
+
+    var ac=document.getElementById('active-case');
+    if(ac){
+      new MutationObserver(function(){
+        var visible=ac.style.display!=='none';
+        var sbA=document.getElementById('sb-active-cases');
+        var sbI=document.getElementById('sb-incoming-cases');
+        if(visible){if(sbA)sbA.textContent='1';if(sbI)sbI.textContent='1';}
+      }).observe(ac,{attributes:true,attributeFilter:['style']});
+    }
+
+    var evImg=document.getElementById('case-evidence-img');
+    var evLbls=document.getElementById('evidence-phase-labels');
+    if(evImg){
+      new MutationObserver(function(){
+        if(evImg.style.display!=='none'&&evImg.src){
+          if(evLbls) evLbls.style.display='grid';
+        } else {
+          if(evLbls) evLbls.style.display='none';
+        }
+      }).observe(evImg,{attributes:true,attributeFilter:['style','src']});
+    }
+
+    function watchStepTime(stepId,timeId){
+      var step=document.getElementById(stepId),tel=document.getElementById(timeId);
+      if(!step||!tel) return;
+      new MutationObserver(function(){
+        var act=step.classList.contains('active')||step.classList.contains('completed');
+        if(act&&(tel.textContent==='&#8212;'||tel.textContent==='\u2014'||!tel.textContent.includes(':'))){
+          tel.textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+        }
+      }).observe(step,{attributes:true,attributeFilter:['class']});
+    }
+    watchStepTime('step-detected','step-detected-time');
+    watchStepTime('step-notified','step-notified-time');
+    watchStepTime('step-acknowledged','step-acknowledged-time');
+  },100);
+})();
+</script>
 </body>
 </html>

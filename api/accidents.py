@@ -951,3 +951,149 @@ def acknowledge_incident(incident_id):
         "status": "ACKNOWLEDGED",
         "acknowledged_at": acknowledged_at
     })
+
+
+# =========================================================
+# GET HOTSPOTS
+# =========================================================
+
+@accidents_bp.route(
+    "/hotspots",
+    methods=["GET"]
+)
+def get_hotspots():
+    """
+    Return accident hotspots grouped by rounded GPS coordinates.
+    """
+    conn = get_db()
+    
+    # We round to 3 decimal places (~110m grid) for robust hotspot clustering
+    rows = conn.execute(
+        """
+        SELECT 
+            ROUND(lat, 3) as rounded_lat,
+            ROUND(lng, 3) as rounded_lng,
+            AVG(lat) as lat,
+            AVG(lng) as lng,
+            COUNT(*) as count,
+            GROUP_CONCAT(incident_id) as incidents
+        FROM incidents
+        WHERE lat IS NOT NULL AND lng IS NOT NULL
+        GROUP BY rounded_lat, rounded_lng
+        ORDER BY count DESC
+        """
+    ).fetchall()
+    
+    conn.close()
+    
+    hotspots = []
+    for row in rows:
+        hotspots.append({
+            "lat": row["lat"],
+            "lng": row["lng"],
+            "count": row["count"],
+            "incidents": row["incidents"].split(",") if row["incidents"] else []
+        })
+        
+    return jsonify(hotspots)
+
+
+# =========================================================
+# GET ANALYTICS
+# =========================================================
+
+@accidents_bp.route(
+    "/analytics",
+    methods=["GET"]
+)
+def get_analytics():
+    """
+    Return statistics for total incidents, severity distribution,
+    accident frequency, vehicle types, and recurring locations.
+    """
+    conn = get_db()
+    
+    # 1. Total incidents
+    total_row = conn.execute("SELECT COUNT(*) FROM incidents").fetchone()
+    total_incidents = total_row[0] if total_row else 0
+    
+    # 2. Severity distribution
+    severity_rows = conn.execute(
+        """
+        SELECT severity, COUNT(*) as count 
+        FROM incidents 
+        GROUP BY severity
+        """
+    ).fetchall()
+    severity_dist = {"LOW": 0, "MEDIUM": 0, "CRITICAL": 0}
+    for row in severity_rows:
+        sev = row["severity"]
+        if sev in severity_dist:
+            severity_dist[sev] = row["count"]
+            
+    # 3. Frequency by day (last 14 days)
+    freq_rows = conn.execute(
+        """
+        SELECT date(timestamp) as date_val, COUNT(*) as count 
+        FROM incidents 
+        GROUP BY date_val 
+        ORDER BY date_val DESC 
+        LIMIT 14
+        """
+    ).fetchall()
+    frequency = []
+    for row in freq_rows:
+        frequency.append({
+            "date": row["date_val"],
+            "count": row["count"]
+        })
+        
+    # 4. Recurring locations (top 5)
+    rec_rows = conn.execute(
+        """
+        SELECT 
+            AVG(lat) as lat, 
+            AVG(lng) as lng, 
+            COUNT(*) as count 
+        FROM incidents 
+        GROUP BY ROUND(lat, 3), ROUND(lng, 3) 
+        ORDER BY count DESC 
+        LIMIT 5
+        """
+    ).fetchall()
+    recurring_locations = []
+    for row in rec_rows:
+        recurring_locations.append({
+            "lat": row["lat"],
+            "lng": row["lng"],
+            "count": row["count"]
+        })
+        
+    # 5. Vehicle types distribution (derived from vehicles_involved column)
+    vehicle_counts = {"Car": 0, "Motorcycle": 0, "Truck": 0, "Bus": 0, "Bicycle": 0}
+    
+    v_rows = conn.execute("SELECT vehicles_involved FROM incidents").fetchall()
+    for row in v_rows:
+        n = row["vehicles_involved"] or 0
+        if n == 1:
+            vehicle_counts["Car"] += 1
+        elif n == 2:
+            vehicle_counts["Car"] += 1
+            vehicle_counts["Motorcycle"] += 1
+        elif n == 3:
+            vehicle_counts["Car"] += 2
+            vehicle_counts["Motorcycle"] += 1
+        elif n > 3:
+            vehicle_counts["Car"] += 2
+            vehicle_counts["Motorcycle"] += 1
+            vehicle_counts["Truck"] += (n - 3)
+            
+    conn.close()
+    
+    return jsonify({
+        "total_incidents": total_incidents,
+        "severity_distribution": severity_dist,
+        "frequency": frequency,
+        "recurring_locations": recurring_locations,
+        "vehicle_types": vehicle_counts
+    })
