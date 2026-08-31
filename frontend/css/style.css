@@ -9,48 +9,48 @@
    DESIGN TOKENS
    ============================================================ */
 :root {
-  /* Core palette */
-  --bg:           #020612;
-  --bg-mid:       #060f26;
-  --panel:        #0c142c;
-  --panel-raised: #142042;
-  --panel-glass:  rgba(8, 14, 30, 0.75);
-  --border:       rgba(59, 158, 255, 0.12);
-  --border-hard:  rgba(59, 158, 255, 0.25);
+  /* Core palette - Neutral CAD Slate theme */
+  --bg:           #0b0f19;
+  --bg-mid:       #111827;
+  --panel:        #1f2937;
+  --panel-raised: #374151;
+  --panel-glass:  #111827;
+  --border:       rgba(148, 163, 184, 0.15);
+  --border-hard:  rgba(148, 163, 184, 0.30);
 
   /* Text */
-  --text:         #f1f5f9;
+  --text:         #f8fafc;
   --text-sub:     #cbd5e1;
   --text-muted:   #94a3b8;
-  --text-dim:     #475569;
+  --text-dim:     #64748b;
 
-  /* Severity colors */
+  /* Severity colors (standard CAD palette, solid and non-glowing) */
   --low:          #10b981;
-  --low-bg:       rgba(16, 185, 129, 0.08);
-  --low-glow:     rgba(16, 185, 129, 0.25);
+  --low-bg:       rgba(16, 185, 129, 0.1);
+  --low-glow:     transparent;
   --medium:       #f59e0b;
-  --medium-bg:    rgba(245, 158, 11, 0.08);
-  --medium-glow:  rgba(245, 158, 11, 0.25);
+  --medium-bg:    rgba(245, 158, 11, 0.1);
+  --medium-glow:  transparent;
   --critical:     #ef4444;
-  --critical-bg:  rgba(239, 68, 68, 0.08);
-  --critical-glow:rgba(239, 68, 68, 0.35);
+  --critical-bg:  rgba(239, 68, 68, 0.1);
+  --critical-glow:transparent;
 
-  /* Electric blue accent */
-  --accent:       #3b82f6;
+  /* Accent Blue (Action buttons, primary selection) */
+  --accent:       #2563eb;
   --accent-bright:#60a5fa;
-  --accent-bg:    rgba(59, 130, 246, 0.10);
-  --accent-glow:  rgba(59, 130, 246, 0.35);
+  --accent-bg:    rgba(37, 99, 235, 0.1);
+  --accent-glow:  transparent;
 
   /* Typography */
   --font-display: 'IBM Plex Mono', monospace;
   --font-body:    'Inter', -apple-system, sans-serif;
 
-  /* Dimensions & Radius */
-  --header-h:     68px;
+  /* Dimensions & Radius (compact layout) */
+  --header-h:     54px;
   --sidebar-w:    380px;
-  --radius-sm:    8px;
-  --radius:       12px;
-  --radius-lg:    16px;
+  --radius-sm:    4px;
+  --radius:       6px;
+  --radius-lg:    8px;
 }
 
 /* ============================================================
@@ -279,75 +279,139 @@ body.landing::after {
 /* ============================================================
    SHARED: BADGES
    ============================================================ */
+/* ============================================================
+   SHARED: BADGES (Solid, Clean CAD badges)
+   ============================================================ */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-family: var(--font-display);
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 999px;
+  padding: 2px 6px;
+  border-radius: 3px;
 }
-.badge.LOW      { background: var(--low-bg);      color: var(--low);      border: 1px solid rgba(16, 185, 129, 0.25); }
-.badge.MEDIUM   { background: var(--medium-bg);   color: var(--medium);   border: 1px solid rgba(245, 158, 11, 0.25); }
-.badge.CRITICAL { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(239, 68, 68, 0.30);
-                  animation: badgePulse 2s ease-in-out infinite; }
-.badge.CLEAR    { background: rgba(148, 163, 184, 0.10); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
-
-@keyframes badgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-  50%       { box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.35); }
-}
+.badge.LOW      { background: var(--low-bg);      color: var(--low);      border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge.MEDIUM   { background: var(--medium-bg);   color: var(--medium);   border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge.CRITICAL { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge.CLEAR    { background: rgba(148, 163, 184, 0.08); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.15); }
 
 /* ============================================================
    SHARED: EMPTY STATE
    ============================================================ */
 .empty-state {
   text-align: center;
-  padding: 36px 16px;
+  padding: 24px 12px;
   color: var(--text-muted);
-  font-size: 12px;
-  border: 1px dashed rgba(59, 130, 246, 0.15);
+  font-size: 11px;
+  border: 1px dashed var(--border);
   border-radius: var(--radius);
   font-family: var(--font-display);
   letter-spacing: 0.5px;
-  background: rgba(8, 14, 30, 0.3);
+  background: rgba(17, 24, 39, 0.5);
 }
 
 /* ============================================================
-   SHARED: CASE CARD
+   SHARED: HIGH-DENSITY CAD INCIDENT LIST
    ============================================================ */
-.case-card {
-  background: var(--panel-glass);
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
-  padding: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: cardEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+.cad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
 }
-.case-card:hover {
-  border-color: var(--border-hard);
-  transform: translateY(-2px) translateX(2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.12);
+.cad-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: var(--bg-mid);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid var(--border);
 }
-.case-card.LOW      { border-left-color: var(--low); }
-.case-card.MEDIUM   { border-left-color: var(--medium); }
-.case-card.CRITICAL {
-  border-left-color: var(--critical);
-  box-shadow: inset 4px 0 16px rgba(239, 68, 68, 0.05);
-  animation: cardCriticalPulse 3s ease-in-out infinite;
+.cad-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text-sub);
 }
-.case-card.CRITICAL:hover {
-  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+.cad-row {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.cad-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.cad-row.selected {
+  background: var(--accent-bg);
+  border-left: 2px solid var(--accent);
+}
+.cad-row.CRITICAL td {
+  border-left: 2px solid var(--critical);
+}
+.cad-row.MEDIUM td {
+  border-left: 2px solid var(--medium);
+}
+.cad-row.LOW td {
+  border-left: 2px solid var(--low);
 }
 
-@keyframes cardCriticalPulse {
-  0%, 100% { border-color: var(--border); border-left-color: var(--critical); }
-  50%       { border-color: rgba(239, 68, 68, 0.3); border-left-color: var(--critical); }
+.cad-row-id {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--accent-bright);
+}
+.cad-row-time {
+  font-family: var(--font-display);
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   SHARED: CAD LOG CONSOLE
+   ============================================================ */
+.cad-log {
+  background: #070a13;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  padding: 10px 12px;
+  color: #38bdf8; /* terminal style */
+  height: 180px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.cad-log-entry {
+  line-height: 1.4;
+  margin-bottom: 5px;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.03);
+  padding-bottom: 3px;
+}
+.cad-log-timestamp {
+  color: var(--text-dim);
+  margin-right: 6px;
+  font-weight: 500;
+}
+.cad-log-sys {
+  color: #a78bfa;
+}
+.cad-log-vis {
+  color: #f43f5e;
+}
+.cad-log-unt {
+  color: #34d399;
+}
+.cad-log-hsp {
+  color: #60a5fa;
+}
+
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes cardEnter {

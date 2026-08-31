@@ -251,22 +251,25 @@ document.addEventListener('keydown', function (e) {
 // CUSTOM SVG MAP ICONS
 // ============================================================
 
-function makeSvgIcon(color, pulseColor) {
+function makeSvgIcon(type, color) {
+    var innerSvg = '';
+    if (type === 'accident') {
+        // Flat professional warning triangle
+        innerSvg = '<polygon points="20,6 35,32 5,32" fill="' + color + '" stroke="#ffffff" stroke-width="1.5"/>' +
+                   '<text x="20" y="27" font-family="sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">!</text>';
+    } else if (type === 'ambulance') {
+        // Clean dispatch badge circle
+        innerSvg = '<circle cx="20" cy="20" r="11" fill="' + color + '" stroke="#ffffff" stroke-width="1.5"/>' +
+                   '<path d="M16 20 h8 M20 16 v8" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square"/>';
+    } else if (type === 'hospital') {
+        // Compact hospital H square
+        innerSvg = '<rect x="8" y="8" width="24" height="24" rx="3" fill="' + color + '" stroke="#ffffff" stroke-width="1.5"/>' +
+                   '<text x="20" y="24" font-family="sans-serif" font-size="12" font-weight="900" fill="#ffffff" text-anchor="middle">H</text>';
+    }
 
-    var pulse = pulseColor ? (
-        '<circle cx="20" cy="20" r="16" fill="' + pulseColor + '" opacity="0.18">' +
-        '<animate attributeName="r" from="16" to="28" dur="2.5s" repeatCount="indefinite"/>' +
-        '<animate attributeName="opacity" from="0.18" to="0" dur="2.5s" repeatCount="indefinite"/>' +
-        '</circle>'
-    ) : '';
-
-    var svg =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">' +
-        pulse +
-        '<circle cx="20" cy="20" r="13" fill="' + color + '" opacity="0.2"/>' +
-        '<circle cx="20" cy="20" r="9" fill="' + color + '"/>' +
-        '<circle cx="20" cy="20" r="5" fill="rgba(255,255,255,0.9)"/>' +
-        '</svg>';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">' +
+              innerSvg +
+              '</svg>';
 
     return L.divIcon({
         html:       svg,
@@ -275,14 +278,12 @@ function makeSvgIcon(color, pulseColor) {
         iconAnchor: [20, 20],
         popupAnchor:[0, -22]
     });
-
 }
 
-
 var ICONS = {
-    accident:  makeSvgIcon('#ff3d47', '#ff3d47'),
-    ambulance: makeSvgIcon('#22d47a', '#22d47a'),
-    hospital:  makeSvgIcon('#3b9eff', '#3b9eff')
+    accident:  makeSvgIcon('accident', '#ef4444'),
+    ambulance: makeSvgIcon('ambulance', '#10b981'),
+    hospital:  makeSvgIcon('hospital', '#2563eb')
 };
 
 
@@ -295,10 +296,9 @@ var map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 11);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
 L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains:  'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom:     19
     }
 ).addTo(map);
@@ -308,6 +308,7 @@ fetchAndRenderAnalytics();
 
 
 var mapMarkers = [];
+var routeLayers = [];
 
 
 // ============================================================
@@ -317,6 +318,8 @@ var mapMarkers = [];
 function clearMap() {
     mapMarkers.forEach(function (m) { map.removeLayer(m); });
     mapMarkers = [];
+    routeLayers.forEach(function (r) { map.removeLayer(r); });
+    routeLayers = [];
 }
 
 
@@ -540,7 +543,7 @@ function updateMap(payload) {
     )
     .addTo(map)
     .bindPopup(
-        '<strong style="color:#ff3d47;">🚨 Accident</strong><br>' +
+        '<strong style="color:#ef4444;">🚨 Incident Scene</strong><br>' +
         '<span style="font-family:monospace;font-size:11px;">' +
         location.lat.toFixed(4) + ', ' + location.lng.toFixed(4) + '</span>'
     )
@@ -554,6 +557,7 @@ function updateMap(payload) {
 
     var points = [[location.lat, location.lng]];
 
+    // 1. Ambulance Route to Scene
     if (ambulance && ambulance.latitude !== undefined && ambulance.longitude !== undefined) {
         var ambMarker = L.marker(
             [ambulance.latitude, ambulance.longitude],
@@ -561,14 +565,24 @@ function updateMap(payload) {
         )
         .addTo(map)
         .bindPopup(
-            '<strong style="color:#22d47a;">🚑 ' + (ambulance.name || 'Ambulance') + '</strong><br>' +
+            '<strong style="color:#10b981;">🚑 En Route: ' + (ambulance.name || 'Ambulance') + '</strong><br>' +
             '<span style="font-family:monospace;font-size:11px;">ETA: ' +
             (ambulance.eta_minutes !== undefined ? ambulance.eta_minutes : '—') + ' min</span>'
         );
         mapMarkers.push(ambMarker);
         points.push([ambulance.latitude, ambulance.longitude]);
+
+        // Draw Ambulance Route
+        var ambRoute = L.polyline([[ambulance.latitude, ambulance.longitude], [location.lat, location.lng]], {
+            color: '#f59e0b',
+            weight: 3,
+            dashArray: '5, 5',
+            opacity: 0.8
+        }).addTo(map);
+        routeLayers.push(ambRoute);
     }
 
+    // 2. Transport Route to Hospital
     if (hospital && hospital.latitude !== undefined && hospital.longitude !== undefined) {
         var hospMarker = L.marker(
             [hospital.latitude, hospital.longitude],
@@ -576,12 +590,21 @@ function updateMap(payload) {
         )
         .addTo(map)
         .bindPopup(
-            '<strong style="color:#3b9eff;">🏥 ' + (hospital.name || 'Hospital') + '</strong><br>' +
+            '<strong style="color:#2563eb;">🏥 Destination: ' + (hospital.name || 'Hospital') + '</strong><br>' +
             '<span style="font-family:monospace;font-size:11px;">ETA: ' +
             (hospital.eta_minutes !== undefined ? hospital.eta_minutes : '—') + ' min</span>'
         );
         mapMarkers.push(hospMarker);
         points.push([hospital.latitude, hospital.longitude]);
+
+        // Draw Hospital Route
+        var hospRoute = L.polyline([[location.lat, location.lng], [hospital.latitude, hospital.longitude]], {
+            color: '#2563eb',
+            weight: 3,
+            dashArray: '5, 5',
+            opacity: 0.8
+        }).addTo(map);
+        routeLayers.push(hospRoute);
     }
 
     if (points.length > 1) {
@@ -597,78 +620,83 @@ function updateMap(payload) {
 // RENDER INCIDENT CARD  (with View Evidence button)
 // ============================================================
 
+// ============================================================
+// CAD LOG HELPER
+// ============================================================
+
+function logCAD(message, type) {
+    var consoleEl = document.getElementById('cad-log');
+    if (!consoleEl) return;
+
+    var now = new Date();
+    var ts = String(now.getHours()).padStart(2, '0') + ':' +
+             String(now.getMinutes()).padStart(2, '0') + ':' +
+             String(now.getSeconds()).padStart(2, '0');
+
+    var typeClass = 'cad-log-sys';
+    var prefix = '[SYS]';
+    if (type === 'vision') {
+        typeClass = 'cad-log-vis';
+        prefix = '[AI_VISION]';
+    } else if (type === 'unit') {
+        typeClass = 'cad-log-unt';
+        prefix = '[UNIT_DISP]';
+    } else if (type === 'hospital') {
+        typeClass = 'cad-log-hsp';
+        prefix = '[HOSP_ALRT]';
+    }
+
+    var entry = document.createElement('div');
+    entry.className = 'cad-log-entry';
+    entry.innerHTML = '<span class="cad-log-timestamp">' + ts + '</span>' +
+                      '<span class="' + typeClass + '">' + prefix + '</span> ' + message;
+
+    consoleEl.appendChild(entry);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+
+// ============================================================
+// RENDER INCIDENT ROW (CAD queue list style)
+// ============================================================
+
 function renderIncident(payload) {
 
     var container = document.getElementById('cases');
-    var empty     = container.querySelector('.empty-state');
+    if (!container) return;
 
+    var empty = document.getElementById('empty-state-row');
     if (empty) { empty.remove(); }
 
     var detection    = payload.detection || {};
     var severity     = payload.severity  || {};
     var dispatch     = payload.dispatch  || {};
     var ambulance    = dispatch.ambulance;
-    var hospital     = dispatch.hospital;
     var severityName = severity.severity || 'LOW';
-    var incidentId   = payload.incident_id || null;
+    var incidentId   = payload.incident_id || '—';
 
-    var card = document.createElement('div');
-    card.className = 'case-card ' + severityName;
+    var tr = document.createElement('tr');
+    tr.className = 'cad-row ' + severityName;
+    tr.setAttribute('onclick', 'showEvidence("' + incidentId + '")');
 
     var now = new Date().toLocaleTimeString('en-US', {
         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
     });
 
-    var html = '<div class="case-row">' +
-        '<div class="case-title">' +
-        '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;">' +
-        '<circle cx="5" cy="5" r="4" fill="currentColor" opacity="0.8"/></svg>' +
-        ' Accident Detected</div>' +
-        '<span class="badge ' + severityName + '">' + severityName + '</span>' +
-        '</div>';
-
-    // Incident ID chip
-    if (incidentId) {
-        html += '<div class="card-incident-id">' +
-            '<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><circle cx="4" cy="4" r="3" fill="#3b9eff" opacity="0.7"/></svg>' +
-            incidentId +
-            '</div>';
-    }
-
-    html += '<div class="case-meta">' +
-        '<div class="case-detail"><b>Score</b> ' + (severity.score !== undefined ? severity.score : 0) + '/100</div>' +
-        '<div class="case-detail"><b>Confidence</b> ' + getConfidence(payload) + '%</div>' +
-        '<div class="case-detail"><b>Vehicles</b> ' + getVehicleCount(detection) + '</div>' +
-        '<div class="case-detail"><b>At</b> ' + (detection.event_time_sec !== undefined ? detection.event_time_sec : '—') + 's</div>' +
-        '</div>';
-
-    if (detection.reason) {
-        html += '<div class="case-detail" style="margin-top:6px;"><b>Reason</b> ' + detection.reason + '</div>';
-    }
-
+    var statusText = 'REPORTED';
     if (ambulance) {
-        html += '<div class="case-detail"><b>Ambulance</b> ' +
-            (ambulance.name || '—') + ' · ' +
-            (ambulance.eta_minutes !== undefined ? ambulance.eta_minutes : '—') + ' min</div>';
+        statusText = 'EN_ROUTE';
     }
 
-    if (hospital) {
-        html += '<div class="case-detail"><b>Hospital</b> ' + (hospital.name || '—') + '</div>';
-    }
+    var shortId = incidentId !== '—' ? incidentId.substring(0, 10) : '—';
 
-    html += '<div class="case-timestamp">⏱ ' + now + '</div>';
+    tr.innerHTML =
+        '<td class="cad-row-id">#' + shortId + '</td>' +
+        '<td class="cad-row-time">' + now + '</td>' +
+        '<td><span class="badge ' + severityName + '">' + severityName + '</span></td>' +
+        '<td><span class="dispatch-status ' + (statusText === 'EN_ROUTE' ? 'dispatched' : 'ready') + '" style="margin-top:0; font-size:8px; padding:1px 4px;">' + statusText + '</span></td>';
 
-    // View Evidence button — only if an incident ID exists
-    if (incidentId) {
-        html += '<button class="evidence-btn" ' +
-            'data-incident-id="' + incidentId + '" ' +
-            'onclick="showEvidence(\'' + incidentId + '\')">' +
-            '🔍 View Evidence' +
-            '</button>';
-    }
-
-    card.innerHTML = html;
-    container.prepend(card);
+    container.insertBefore(tr, container.firstChild);
 
     updateIncidentCount();
 
@@ -708,6 +736,26 @@ function processIncident(payload) {
         speakIncident(payload);
         fetchAndRenderHotspots();
         fetchAndRenderAnalytics();
+
+        // CAD Logging
+        var loc = payload.accident_location || {};
+        var incId = payload.incident_id || 'UNKNOWN';
+        var shortId = incId.substring(0, 10);
+        logCAD('Incident #' + shortId + ' detected at ' + loc.lat.toFixed(4) + ', ' + loc.lng.toFixed(4) + ' (' + (detection.reason || 'Accident') + ')', 'vision');
+        logCAD('AI Severity: ' + (severity.score || 0) + '/100 [' + sev + '] (Confidence: ' + getConfidence(payload) + '%)', 'vision');
+
+        var dispatch = payload.dispatch || {};
+        if (dispatch.ambulance) {
+            logCAD('Unit ' + (dispatch.ambulance.id || 'EMS') + ' en route. ETA: ' + (dispatch.ambulance.eta_minutes || '—') + 'm, Dist: ' + (dispatch.ambulance.distance_km || '—') + 'km.', 'unit');
+        } else {
+            logCAD('Ambulance dispatch: NO UNIT AVAILABLE.', 'unit');
+        }
+
+        if (dispatch.hospital) {
+            logCAD('Trauma center alert: ' + (dispatch.hospital.name || 'Hosp') + '. ETA: ' + (dispatch.hospital.eta_minutes || '—') + 'm.', 'hospital');
+        } else {
+            logCAD('Hospital alert: NO DESTINATION ASSIGNED.', 'hospital');
+        }
     }
 
 }
